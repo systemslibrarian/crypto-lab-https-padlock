@@ -72,6 +72,10 @@ test.describe('promise 1, the key', () => {
     // src/pki/kat.test.ts.
     expect(await evidence(page, '[data-verdict="promise-key"]', 'Key type'))
       .toBe('elliptic curve (P-256)')
+    // The page says WebCrypto loaded it, which is the measurement rather than
+    // the parsed field beside it.
+    expect(await evidence(page, '[data-verdict="promise-key"]', 'Loaded by your browser'))
+      .toBe('yes')
     // And the lab is honest that it did not observe encryption happening.
     await expectVerdict(page, 'promise-key', {
       contains: 'which this lab does not run',

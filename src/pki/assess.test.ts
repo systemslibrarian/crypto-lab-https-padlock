@@ -27,6 +27,17 @@ describe('the four promises, computed', () => {
     expect(a.padlock.result).toBe('pass')
   })
 
+  it('promise 1 reports a key your browser actually loaded, not a parsed field', async () => {
+    const a = await assess(real(), WIRE)
+    const key = a.promises.find((p) => p.id === 'promise-key')!
+    expect(key.outcome).toBe('pass')
+    // The distinction that matters: this says WebCrypto imported the key, which
+    // is a thing the lab found out, rather than that the certificate had a
+    // field in it. The check has a reachable failure branch because of it.
+    expect(key.evidence.find((e) => e.label === 'Loaded by your browser')?.value).toBe('yes')
+    expect(key.detail).toContain('loaded the certificate')
+  })
+
   it('a wrong address fails only the name check', async () => {
     const a = await assess({ ...real(), address: 'evil.example' }, WIRE)
     const byId = new Map(a.promises.map((p) => [p.id, p.outcome]))

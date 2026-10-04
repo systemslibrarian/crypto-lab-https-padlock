@@ -2,7 +2,10 @@ import type * as x509 from '@peculiar/x509'
 import { human } from './clock'
 import { DEVICE_STORE, type Scenario } from './fixtures'
 import { matchName } from './hostname'
-import { commonName, dnsNames, keyDescription, organization, parsePem, signatureDescription, validityAt } from './parse'
+import {
+  commonName, dnsNames, keyDescription, organization, parsePem, signatureDescription,
+  validityAt, webCrypto,
+} from './parse'
 import { validatePath, type PathResult } from './path'
 import type { CheckResult, Outcome } from './types'
 
@@ -55,17 +58,33 @@ export interface AssessInput {
  * something it never measured, which is the failure mode the whole template
  * exists to prevent.
  */
-function checkKey(leaf: x509.X509Certificate): CheckResult {
-  const desc = keyDescription(leaf)
+async function checkKey(leaf: x509.X509Certificate): Promise<CheckResult> {
+  // IMPORTED, not merely parsed. An earlier version of this function returned
+  // 'pass' unconditionally with the key's algorithm beside it, which made
+  // promise 1 the one asserted verdict on a page whose whole argument is that
+  // it asserts nothing -- and gave the check no reachable failure branch at
+  // all. Handing the key to WebCrypto is what turns "there is a key to encrypt
+  // to" into something this lab actually found out.
+  let imported = false
+  try {
+    const key = await leaf.publicKey.export(webCrypto)
+    imported = key.type === 'public'
+  } catch {
+    // A key WebCrypto will not import -- an unsupported curve, a malformed
+    // SubjectPublicKeyInfo -- is a key no browser can start a handshake with.
+    imported = false
+  }
   return {
     id: 'promise-key',
-    outcome: 'pass',
-    headline: 'There is a key to encrypt to',
-    detail:
-      'The certificate carries a working public key, so your browser has something to set up encryption with. ' +
-      'The encryption itself happens in the handshake, which this lab does not run -- see TLS Handshake for that part.',
+    outcome: imported ? 'pass' : 'fail',
+    headline: imported ? 'There is a key to encrypt to' : 'The key cannot be used',
+    detail: imported
+      ? 'Your browser loaded the certificate\'s public key and it works, so there is something here to set up encryption with. ' +
+        'The encryption itself happens in the handshake, which this lab does not run -- see TLS Handshake for that part.'
+      : 'This certificate carries a public key your browser cannot load, so no handshake could start from it -- whatever else about the certificate is in order.',
     evidence: [
-      { label: 'Key type', value: desc },
+      { label: 'Key type', value: keyDescription(leaf) },
+      { label: 'Loaded by your browser', value: imported ? 'yes' : 'no' },
       { label: 'Signed with', value: signatureDescription(leaf) },
     ],
   }
@@ -273,7 +292,7 @@ export async function assess(input: AssessInput, wire: WireFacts): Promise<Asses
 
   const path = await validatePath(effectiveChain, DEVICE_STORE, at)
 
-  const key = checkKey(leaf)
+  const key = await checkKey(leaf)
   const name = checkName(leaf, address)
   const vouched = checkVouched(path)
   const time = checkTime(leaf, at)

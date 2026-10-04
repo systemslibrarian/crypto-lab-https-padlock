@@ -200,8 +200,8 @@
     },
     "key-check-failed": {
       "file": "src/pki/assess.ts",
-      "find": "    id: 'promise-key',\n    outcome: 'pass',",
-      "replace": "    id: 'promise-key',\n    outcome: 'fail',",
+      "find": "    outcome: imported ? 'pass' : 'fail',",
+      "replace": "    outcome: imported ? 'fail' : 'pass',",
       "kills": {
         "promise-key": {
           "test": "the key check reports the curve the certificate actually carries",
@@ -211,7 +211,7 @@
           }
         }
       },
-      "why": "The one promise the lab does not have to argue for stops being reported as met."
+      "why": "Inverts the WebCrypto key import that promise 1 now turns on. The check used to return 'pass' unconditionally, which made it the one asserted verdict on the page and gave it no reachable failure branch; this mutation is only possible because it is a measurement."
     },
     "chain-length-off-by-one": {
       "file": "src/ui/render.ts",

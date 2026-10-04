@@ -150,14 +150,14 @@ npm run mint:toy     # re-mint the toy hierarchy (rotates its keys)
 
 ## Build & Verify
 
-**48 unit tests** (Vitest), all passing, across five files:
+**49 unit tests** (Vitest), all passing, across five files:
 
 | File | What it proves |
 |---|---|
 | `src/pki/kat.test.ts` | **13 known-answer tests.** Every vendored chain parses to the subject, issuer, serial, validity window, SANs and SHA-256 fingerprint that `openssl x509` reports. The expected values are literals read out of the certificates *before* this lab could parse them. |
 | `src/pki/hostname.test.ts` | RFC 6125 matching: exact names, wildcards standing for exactly one label, the ignored Common Name, and fail-closed behaviour on anything that is not a plain DNS name. |
 | `src/pki/path.test.ts` | The correct path accepts the good chain and **rejects every bad one** — missing intermediate, one-byte signature alteration, expired, self-signed leaf, a root the device does not hold, and a parent not permitted to sign. |
-| `src/pki/assess.test.ts` | Every verdict the page renders, computed: which checks fail for which breakage, and that the attacker fixture renders **ALARM** rather than a green success. |
+| `src/pki/assess.test.ts` | Every verdict the page renders, computed: which checks fail for which breakage, that promise 1 reports a key WebCrypto actually **imported** rather than a parsed field, and that the attacker fixture renders **ALARM** rather than a green success. |
 | `src/tls/clienthello.test.ts` | The `ClientHello` encoder, checked by an **independent structural walk** of the TLS message that shares no arithmetic with the encoder's own offsets. |
 
 **The accessibility gate** (`npm run test:a11y`) scans the *production build* in Chromium for

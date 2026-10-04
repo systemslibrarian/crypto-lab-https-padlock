@@ -189,6 +189,10 @@ const portInUse = () =>
 async function waitForPortFree(label) {
   for (let i = 0; i < 60; i += 1) {
     if (!(await portInUse())) return true
+    // A delay is the whole point. Without one this loop is sixty immediate
+    // retries that all complete inside a millisecond -- the name says wait and
+    // the code would not have.
+    await new Promise((resolve) => setTimeout(resolve, 500))
   }
   console.error(`\n${label}: port ${PORT} never came free. Aborting rather than reporting`)
   console.error('a result about a run that was never served.')
