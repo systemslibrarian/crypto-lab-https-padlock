@@ -157,17 +157,45 @@ if (invalid.length) {
  * precondition instead.
  */
 const PORT = 4730
-const portFree = await new Promise((resolve) => {
-  const socket = netConnect({ host: '127.0.0.1', port: PORT })
-  const done = (free) => {
-    socket.destroy()
-    resolve(free)
+
+/** Is anything listening on the preview port right now? */
+const portInUse = () =>
+  new Promise((resolve) => {
+    const socket = netConnect({ host: '127.0.0.1', port: PORT })
+    const done = (inUse) => {
+      socket.destroy()
+      resolve(inUse)
+    }
+    socket.setTimeout(1500, () => done(false))
+    socket.once('connect', () => done(true))
+    socket.once('error', () => done(false))
+  })
+
+/**
+ * Wait for the previous phase's preview server to let go of the port.
+ *
+ * Every phase of this loop starts its own `vite preview --strictPort` (CI=1, so
+ * Playwright never reuses one), and Playwright tears the previous one down when
+ * its run ends -- but the socket is not always free by the time the next phase
+ * asks for it. When it is not, `--strictPort` refuses, nothing is served, and
+ * the suite goes red for a reason that has nothing to do with the mutation.
+ *
+ * Rule 3's classifier already catches that and reports NOT A KILL rather than a
+ * kill, which is correct and useless: the mutation's real verdict is still
+ * unknown and the whole run has to be repeated. So wait for the port instead of
+ * discovering the collision afterwards. Measured at 14 mutations x 2 phases, the
+ * wait is normally zero and occasionally one tick.
+ */
+async function waitForPortFree(label) {
+  for (let i = 0; i < 60; i += 1) {
+    if (!(await portInUse())) return true
   }
-  socket.setTimeout(1500, () => done(true))
-  socket.once('connect', () => done(false))
-  socket.once('error', () => done(true))
-})
-if (!portFree) {
+  console.error(`\n${label}: port ${PORT} never came free. Aborting rather than reporting`)
+  console.error('a result about a run that was never served.')
+  return false
+}
+
+if (await portInUse()) {
   console.error(`Refusing to run: something is already listening on port ${PORT}.`)
   console.error('')
   console.error('This run forces CI=1 so Playwright starts its OWN preview server, because a')
@@ -232,7 +260,10 @@ const notAKill = (output) => NOT_A_KILL.find(({ pattern }) => pattern.test(strip
  * single-test run therefore CANNOT exit 0: the named test passes and the
  * teardown fails on the other sixteen. So the suite runs whole, once per phase,
  * and the per-test answer is read out of the reporter. */
-function runSuite() {
+async function runSuite(label) {
+  if (!(await waitForPortFree(label))) {
+    return { failed: true, output: 'PORT_NEVER_FREED', aborted: true }
+  }
   const cmd = 'npx playwright test --project=claims --project=coverage --reporter=list --retries=0'
   try {
     return { failed: false, output: sh(cmd) }
@@ -268,7 +299,7 @@ console.log(`baseline bundle ${baselineHash}\n`)
 /* RULE 1. If the unmutated suite is already red, a mutation "caught" by it is
    caught by nothing. */
 console.log('running the unmutated baseline suite...')
-const baseline = runSuite()
+const baseline = await runSuite('baseline')
 if (baseline.failed) {
   console.error('The unmutated suite does not pass in the isolated tree. Nothing below would')
   console.error('mean anything: a mutation caught by an already-red suite is caught by nothing.\n')
@@ -289,7 +320,13 @@ for (const id of ids) {
     apply(entry, true)
     const built = build()
     const mutatedHash = built ? bundleHash() : null
-    const mutated = built ? runSuite() : { failed: false, output: '' }
+    const mutated = built ? await runSuite(id) : { failed: false, output: '' }
+    if (mutated.aborted) {
+      console.log('ABORTED (port never freed)')
+      apply(entry, false)
+      rmSync(TREE, { recursive: true, force: true })
+      process.exit(2)
+    }
     const failed = built ? failingTitles(mutated.output) : []
     const runs = markers.map(([marker, kill]) => [
       marker,
