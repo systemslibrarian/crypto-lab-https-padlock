@@ -84,6 +84,7 @@ async function checkKey(leaf: x509.X509Certificate): Promise<CheckResult> {
   return {
     id: 'promise-key',
     outcome: imported ? 'pass' : 'fail',
+    plain: imported ? 'Key loads' : 'Key will not load',
     headline: imported ? 'The certificate carries a usable key' : 'The key cannot be used',
     detail: imported
       ? 'Your browser loaded the certificate\'s public key and it works. This key is how the site proves it really holds the matching private key: ' +
@@ -108,6 +109,7 @@ function checkName(leaf: x509.X509Certificate, address: string): CheckResult {
   return {
     id: 'promise-name',
     outcome: m.matched ? 'pass' : 'fail',
+    plain: m.matched ? 'Matches' : 'Does not match',
     headline: m.matched ? 'The name matches' : 'The name does not match',
     detail: m.matched
       ? m.wildcard
@@ -133,6 +135,7 @@ function checkVouched(path: PathResult): CheckResult {
   return {
     id: 'promise-vouched',
     outcome: ok ? 'pass' : 'fail',
+    plain: ok ? 'Signature verifies' : 'Signature does not verify',
     headline: ok ? 'Somebody vouched for it' : 'Nobody in the trusted list vouched for it',
     detail: ok
       ? `Each certificate was signed by the next one up, and the chain ends at "${root?.name ?? 'a root'}" -- a root the server never sent, taken from the trusted list instead. ${path.anchorWhy}`
@@ -151,6 +154,7 @@ function checkTime(leaf: x509.X509Certificate, at: Date): CheckResult {
   return {
     id: 'promise-time',
     outcome: v.inWindow ? 'pass' : 'fail',
+    plain: v.inWindow ? 'In date' : v.side === 'after' ? 'Expired' : 'Not valid yet',
     headline: v.inWindow ? 'It has not expired' : v.side === 'after' ? 'It has expired' : 'It is not valid yet',
     detail: v.inWindow
       ? `The date you are checking falls inside the window the certificate was issued for. Move the date past ${human(v.notAfter)} and this becomes a failure, with no cryptography changing at all.`
@@ -177,6 +181,7 @@ function checkHonest(scenario: Scenario, everythingPassed: boolean): CheckResult
   return {
     id: 'nonpromise-honest',
     outcome: 'not-established',
+    plain: 'Never checked',
     headline: 'Not that the site is honest',
     detail: everythingPassed
       ? `Every check above passed for "${scenario.site}". Nothing in any certificate anywhere says whether the people running a name mean you well. A certificate is about a name, and that is all it is about.`
@@ -211,6 +216,7 @@ function checkOperator(leaf: x509.X509Certificate): CheckResult {
     // checks neither. The branch below is about the EXPLANATION, not the
     // outcome -- the outcome is the negative claim and it does not vary.
     outcome: 'not-established',
+    plain: 'Not established',
     headline: 'Not that the company is who it says',
     detail:
       org === ''
@@ -229,6 +235,7 @@ function checkSni(address: string, hostnameInBytes: string, offset: number): Che
   return {
     id: 'nonpromise-sni',
     outcome: 'not-established',
+    plain: 'Sent in the clear',
     headline: 'Not that the hostname was private',
     detail:
       `Before any encryption exists, your browser sends the name of the site in the clear so the server knows which certificate to offer. ` +
@@ -248,6 +255,7 @@ function checkStrength(suites: readonly string[]): CheckResult {
   return {
     id: 'nonpromise-strength',
     outcome: 'not-established',
+    plain: 'Not shown by a padlock',
     headline: 'Not that the strongest cryptography was used',
     detail:
       'Your browser and the server agree on which encryption to use at the very start, in the same unprotected message as the hostname, before either side has proved who it is. ' +

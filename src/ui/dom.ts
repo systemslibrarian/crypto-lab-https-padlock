@@ -48,3 +48,29 @@ export function list(attrs: Attrs, items: HTMLElement[]): HTMLElement {
   }
   return ul
 }
+
+/**
+ * An inline definition: a real button plus a panel, never a hover tooltip.
+ *
+ * A hover tooltip is unreachable by keyboard and by touch, and WCAG 1.4.13
+ * then requires it to be dismissable, hoverable and persistent -- three rules
+ * to get wrong for no gain over a button that already announces its state.
+ */
+export function defineTerm(word: string, definition: string, key: string): HTMLElement {
+  const panelId = `def-${key}`
+  const btn = el('button', {
+    type: 'button',
+    class: 'define',
+    'aria-expanded': 'false',
+    'aria-controls': panelId,
+  }, [document.createTextNode(word)])
+  const panel = el('span', { class: 'define-panel', id: panelId, role: 'note', hidden: true }, [
+    document.createTextNode(definition),
+  ])
+  btn.addEventListener('click', () => {
+    const open = btn.getAttribute('aria-expanded') === 'true'
+    btn.setAttribute('aria-expanded', String(!open))
+    panel.hidden = open
+  })
+  return el('span', { class: 'define-wrap' }, [btn, panel])
+}

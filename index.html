@@ -185,14 +185,30 @@
       </div>
 
       <main>
+        <!-- CORE: everything a newcomer needs, in the order they need it.
+             Two sentences, then the action, then the consequence. The depth
+             sections below are one click each and nothing above depends on
+             them. -->
         <section id="intro" class="card intro" aria-labelledby="intro-h"></section>
+        <section id="stage" class="card" aria-labelledby="stage-h"></section>
         <section id="controls" class="card" aria-labelledby="controls-h"></section>
         <section id="padlock" class="card" aria-labelledby="padlock-h"></section>
-        <section id="chain" class="card" aria-labelledby="chain-h"></section>
         <section id="promises" class="card" aria-labelledby="promises-h"></section>
+        <!-- The four non-promises and the negative claim stay in the CORE, not
+             behind a disclosure: master template 4.1d requires the limitation
+             to be visible in the fixture state, and it is half the lesson. -->
         <section id="nonpromises" class="card" aria-labelledby="nonpromises-h"></section>
-        <section id="wire" class="card" aria-labelledby="wire-h"></section>
-        <section id="scope" class="card" aria-labelledby="scope-h"></section>
+        <section id="quiz" class="card" aria-labelledby="quiz-h"></section>
+
+        <!-- DEPTH: the real mechanism, for anyone who wants it. -->
+        <section id="depth" class="card" aria-labelledby="depth-h">
+          <h2 id="depth-h">Look closer</h2>
+          <p class="lede">Everything above is computed from these. Open whichever you want; none of it is needed to follow the lesson.</p>
+          <div id="chain"></div>
+          <div id="wire"></div>
+          <div id="scope"></div>
+        </section>
+
         <section id="next" class="card" aria-labelledby="next-h"></section>
       </main>
 

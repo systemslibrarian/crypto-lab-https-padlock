@@ -20,9 +20,22 @@ export const CAPTURED_AT = new Date('2026-10-04T00:00:00Z')
 /** Where the date control starts. The real leaf is inside its window here. */
 export const DEFAULT_AT = CAPTURED_AT
 
-/** The range the date control spans: a year either side of the capture. */
-export const CLOCK_MIN = new Date('2025-10-04T00:00:00Z')
-export const CLOCK_MAX = new Date('2027-10-04T00:00:00Z')
+/**
+ * The range the date control spans.
+ *
+ * Wide enough to express EVERY date the shipped certificates make interesting,
+ * which is a requirement rather than a preference: the date presets are derived
+ * from each certificate's own notBefore/notAfter, and a preset outside this
+ * range has to be dropped -- so the control silently disappeared for the toy
+ * chain, whose window runs to 2036. A reader switching certificates lost a
+ * button with no explanation.
+ *
+ * So the floor sits before the earliest notBefore (2026-01-01, the toy mint)
+ * and the ceiling after the latest notAfter (2036-01-01, the same), each with a
+ * year of margin to move around in.
+ */
+export const CLOCK_MIN = new Date('2025-01-01T00:00:00Z')
+export const CLOCK_MAX = new Date('2037-01-01T00:00:00Z')
 
 /** `YYYY-MM-DD`, which is what an `<input type="date">` exchanges. */
 export function toDateInput(at: Date): string {

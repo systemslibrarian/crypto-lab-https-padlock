@@ -317,21 +317,42 @@ export async function boot(page: Page): Promise<void> {
   // assess() leaves the sections it had not reached EMPTY — and an empty
   // region is exactly what a scan reports as perfectly accessible. Asserted
   // as a count of non-empty sections rather than by reading any of their text.
-  for (const id of ['intro', 'controls', 'padlock', 'chain', 'promises', 'nonpromises', 'wire', 'scope', 'next']) {
+  // The CORE sections each carry their own h2. The depth sections (chain, wire,
+  // scope) live inside #depth behind a disclosure each, so they carry an h3 and
+  // #depth owns the h2 -- asserted separately below.
+  for (const id of ['intro', 'stage', 'controls', 'padlock', 'promises', 'nonpromises', 'quiz', 'depth', 'next']) {
     await expect(page.locator(`#${id}`), `#${id} must not render empty`).not.toBeEmpty();
     await expect(page.locator(`#${id} h2`), `#${id} must have its heading`).toHaveCount(1);
   }
+  for (const id of ['chain', 'wire', 'scope']) {
+    await expect(page.locator(`#${id}`), `#${id} must not render empty`).not.toBeEmpty();
+    await expect(
+      page.locator(`#${id} > details > summary`),
+      `#${id} is depth: it must sit behind exactly one disclosure`
+    ).toHaveCount(1);
+  }
 
   // ── The shipped defaults, as SHAPES ─────────────────────────────────────
-  // Three sites, the first one selected; four promises and four non-promises;
-  // an address that looks like a hostname and a date that looks like a date.
+  // The GUIDED LESSON is the arrival state, which is the single most important
+  // structural fact about this page: a newcomer gets a step, not a control
+  // panel. Step 1 shows the site chooser and nothing else, so the address,
+  // date and tamper controls are deliberately ABSENT here -- asserted, because
+  // their absence is the design rather than a render that failed.
+  await expect(page.locator('#mode-lesson')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#mode-explore')).toHaveAttribute('aria-pressed', 'false');
   await expect(page.locator('.site-opt input[type="radio"]')).toHaveCount(3);
   await expect(page.locator('.site-opt input[type="radio"]:checked')).toHaveCount(1);
-  await expect(page.locator('#promises .check')).toHaveCount(4);
-  await expect(page.locator('#nonpromises .check')).toHaveCount(4);
-  await expect(page.locator('#address-input')).toHaveValue(/^[a-z0-9.-]+$/);
-  await expect(page.locator('#date-input')).toHaveValue(/^\d{4}-\d{2}-\d{2}$/);
-  await expect(page.locator('#tamper-btn')).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.locator('#address-input')).toHaveCount(0);
+  await expect(page.locator('#date-input')).toHaveCount(0);
+  await expect(page.locator('#tamper-btn')).toHaveCount(0);
+  await expect(page.locator('#promises .summary-row')).toHaveCount(4);
+  await expect(page.locator('#nonpromises .summary-row')).toHaveCount(4);
+  // Five steps, one of them current.
+  await expect(page.locator('.progress-step')).toHaveCount(5);
+  await expect(page.locator('.progress-step[aria-current="step"]')).toHaveCount(1);
+  // The quiz is not yet reachable, so it renders its placeholder rather than
+  // nine radios.
+  await expect(page.locator('input[name^="quiz-"]')).toHaveCount(0);
 
   // Every verdict marker the page renders carries a result. A marker with no
   // data-result is a verdict rendered with no state, which is the shape
@@ -339,9 +360,17 @@ export async function boot(page: Page): Promise<void> {
   const stateless = await page.locator('[data-verdict]:not([data-result])').count();
   expect(stateless, 'every [data-verdict] must carry a data-result').toBe(0);
 
-  // ── Disclosures ship shut ───────────────────────────────────────────────
+  // ── Disclosures ship shut, and every one is keyed ───────────────────────
+  // The key is what lets an open disclosure survive a re-render; one without a
+  // key silently closes itself on the reader's next keystroke.
   await expect(page.locator('details[open]')).toHaveCount(0);
-  await expect(page.locator('details')).toHaveCount(2);
+  const unkeyed = await page.locator('details:not([data-disclosure])').count();
+  expect(unkeyed, 'every <details> needs a data-disclosure key to survive a re-render').toBe(0);
+  // Inline definitions are buttons, never hover tooltips.
+  await expect(page.locator('.define')).not.toHaveCount(0);
+  await expect(page.locator('.define[aria-expanded="true"]')).toHaveCount(0);
+  const unlabelled = await page.locator('.define:not([aria-controls])').count();
+  expect(unlabelled, 'a definition toggle must point at its panel').toBe(0);
 
   await settle(page);
   await expectNotBlank(page, 'first paint');
@@ -713,33 +742,56 @@ export async function scan(page: Page, label: string): Promise<void> {
 // ── The drive ───────────────────────────────────────────────────────────────
 
 /**
- * Drive the lab through every state that renders content, scanning each.
+ * Assert focus landed where the reader left it (WCAG 3.2.x, and plain
+ * usability).
+ *
+ * Every action on this page replaces the controls, so focus restoration is a
+ * property of the implementation rather than of the browser. Before it existed,
+ * a click on "Change one bit" dropped focus to the body -- so a keyboard reader
+ * lost their place on every single interaction, and no axe rule says a word
+ * about it.
+ */
+async function expectFocus(page: Page, id: string, after: string): Promise<void> {
+  const actual = await page.evaluate(() => document.activeElement?.id ?? '(body)');
+  expect(actual, `focus must stay on #${id} after ${after}`).toBe(id);
+}
+
+/** Click a control and assert the reader is still standing on it. */
+async function clickKeepingFocus(page: Page, id: string, label: string): Promise<void> {
+  await page.locator(`#${id}`).focus();
+  await page.locator(`#${id}`).click();
+  await expectFocus(page, id, label);
+}
+
+/**
+ * Drive the lab through every state it teaches, scanning each.
  *
  * Four things shape this drive:
  *
- *  - THE ARRIVAL STATE IS SCANNED FIRST, exactly as a reader gets it: the real
- *    github.com chain, every promise passing, the padlock shown, both
- *    disclosures shut.
+ *  - THE ARRIVAL STATE IS THE GUIDED LESSON, exactly as a reader gets it: step
+ *    1 of 5, the real github.com chain, every check passing, only the site
+ *    chooser on screen, every disclosure shut.
  *
- *  - EVERY FAILURE AND ALARM STATE. A mismatched address, a date past expiry,
- *    a one-bit signature flip, the self-signed chain, and the attacker chain
- *    whose every check passes and whose verdict is ALARM. None of these is
- *    reachable without deliberately breaking something, and each repaints a
- *    `.check` border and a wash the non-text oracle has to judge.
+ *  - EVERY FAILURE AND ALARM STATE, reached through the lesson's own controls:
+ *    a mismatched address, a date past expiry and before the window, a one-bit
+ *    signature flip, the self-signed chain, and the attacker chain whose every
+ *    check passes and whose verdict is ALARM. None is reachable without
+ *    deliberately breaking something, and each repaints a row border and a
+ *    wash the non-text oracle has to judge.
  *
- *  - HOVER IS A STATE, AND IT PERSISTS AFTER A CLICK. `:hover` stays on the
- *    element under the pointer after `page.click()` resolves, so it is the
- *    state a reader occupies the instant after pressing a button — and both
- *    `.btn:hover` and `.site-opt:hover` repaint their fill. Scanned
- *    explicitly.
+ *  - THE INTERACTION PROPERTIES axe cannot see: focus surviving every action,
+ *    an open disclosure surviving a recomputation, and a definition panel
+ *    opening from the keyboard. These are asserted at every width, because 320
+ *    is where the shared top bar stops widening its touch targets and where a
+ *    reflow failure would hide them.
  *
- *  - NO FIXED TIMEOUTS. Every wait is on a real DOM completion signal: a
- *    verdict's `data-result`, a radio's checked state, a disclosure's `open`.
+ *  - NO FIXED TIMEOUTS. Every wait is on a real DOM signal: a `data-result`, a
+ *    `data-claim`'s text, `aria-pressed`, a radio's checked state.
  */
 export async function driveAllStates(page: Page, label: string): Promise<void> {
   const scanAt = (s: string): Promise<void> => scan(page, `${label} / ${s}`);
 
-  await scanAt('arrival: the real github.com chain, all four promises passing');
+  await scanAt('arrival: the guided lesson, step 1 of 5, all four checks passing');
 
   // ── The shared skip link, focused ───────────────────────────────────────
   await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur?.());
@@ -747,91 +799,127 @@ export async function driveAllStates(page: Page, label: string): Promise<void> {
   await expect(page.locator('a.cl-skip-link')).toBeFocused();
   await scanAt('the shared skip link focused, slid in from top:-3rem');
 
-  // ── Promise 2 broken: an address the certificate is not for ─────────────
-  const address = page.locator('#address-input');
-  await address.fill('evil.example');
+  // ── An inline definition, opened from the KEYBOARD ──────────────────────
+  const define = page.locator('#intro .define').first();
+  await define.focus();
+  await page.keyboard.press('Enter');
+  await expect(define).toHaveAttribute('aria-expanded', 'true');
+  await scanAt('an inline definition open, reached by keyboard rather than hover');
+  await page.keyboard.press('Enter');
+  await expect(define).toHaveAttribute('aria-expanded', 'false');
+
+  // ── Step 2: the name check, with a prediction answered both ways ────────
+  await page.locator('#step-next').click();
+  await expect(page.locator('[data-claim="step-progress"]')).toHaveText('Step 2 of 5.');
+  await scanAt('step 2: the prediction unanswered, the address control on screen');
+
+  await page.locator('#predict-name-must-match-still-padlock').check();
+  await expect(page.locator('[data-verdict="prediction"]')).toHaveAttribute('data-result', 'fail');
+  await scanAt('step 2: a wrong prediction, with its explanation shown');
+  await page.locator('#predict-name-must-match-no-padlock').check();
+  await expect(page.locator('[data-verdict="prediction"]')).toHaveAttribute('data-result', 'pass');
+  await scanAt('step 2: a right prediction');
+
+  await page.locator('#address-input').fill('evil.example');
   await expect(page.locator('[data-verdict="promise-name"]')).toHaveAttribute('data-result', 'fail');
   await expect(page.locator('[data-verdict="padlock"]')).toHaveAttribute('data-result', 'fail');
-  await scanAt('name check failing: NO PADLOCK, one check red and three green');
+  await expectFocus(page, 'address-input', 'typing an address');
+  await scanAt('name check failing: NO PADLOCK, the cause shown, the causal summary painted');
 
-  // A name that matches a wildcard rather than an exact entry.
-  await address.fill('www.github.com');
-  await expect(page.locator('[data-verdict="promise-name"]')).toHaveAttribute('data-result', 'pass');
-  await scanAt('name check passing on an exact second SAN');
-
-  // Something that is not a hostname at all: the fail-closed path.
-  await address.fill('not a hostname!');
+  await page.locator('#address-input').fill('not a hostname!');
   await expect(page.locator('[data-verdict="promise-name"]')).toHaveAttribute('data-result', 'fail');
   await scanAt('name check failing closed on a malformed address');
 
-  await address.fill('github.com');
-  await expect(page.locator('[data-verdict="padlock"]')).toHaveAttribute('data-result', 'pass');
+  // A pasted URL, which a reader asked for "the address" really will paste.
+  await page.locator('#address-input').fill('https://github.com/owner/repo');
+  await expect(page.locator('[data-verdict="promise-name"]')).toHaveAttribute('data-result', 'pass');
+  await scanAt('a pasted URL, reduced to its host and matching');
 
-  // ── Promise 4 broken: move the clock past expiry ────────────────────────
-  const date = page.locator('#date-input');
-  await date.fill('2027-06-01');
+  // ── Step 3: the clock, driven by its presets ────────────────────────────
+  await page.locator('#step-next').click();
+  await expect(page.locator('[data-claim="step-progress"]')).toHaveText('Step 3 of 5.');
+  await clickKeepingFocus(page, 'preset-expired', 'the expired date preset');
   await expect(page.locator('[data-verdict="promise-time"]')).toHaveAttribute('data-result', 'fail');
-  await scanAt('expired: the time check red with every signature still verifying');
+  await scanAt('expired: the dates red, every signature still verifying');
 
-  // And before the window opens, which is the other side of the same check.
-  await date.fill('2026-01-15');
+  await clickKeepingFocus(page, 'preset-early', 'the before-the-window preset');
   await expect(page.locator('[data-verdict="promise-time"]')).toHaveAttribute('data-result', 'fail');
   await scanAt('not yet valid: the other side of the validity window');
 
-  await date.fill('2026-10-04');
+  // An invalid date, which paints aria-invalid and an error tied to the input.
+  await page.locator('#date-input').fill('');
+  await page.locator('#date-input').dispatchEvent('change');
+  await scanAt('the date control with an unusable value and its error announced');
+  await clickKeepingFocus(page, 'preset-valid', 'the in-window preset');
   await expect(page.locator('[data-verdict="promise-time"]')).toHaveAttribute('data-result', 'pass');
 
-  // ── Promise 3 broken: flip one bit of the signature ────────────────────
-  const tamper = page.locator('#tamper-btn');
-  await tamper.click();
-  await expect(tamper).toHaveAttribute('aria-pressed', 'true');
+  // ── Step 4: one bit of the signature ───────────────────────────────────
+  await page.locator('#step-next').click();
+  await expect(page.locator('[data-claim="step-progress"]')).toHaveText('Step 4 of 5.');
+  await clickKeepingFocus(page, 'tamper-btn', 'tampering with the signature');
+  await expect(page.locator('#tamper-btn')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('[data-verdict="promise-vouched"]')).toHaveAttribute('data-result', 'fail');
-  // Hover persists on the button that was just clicked.
-  await scanAt('signature tampered: the vouching check red, button hovered and pressed');
-  await tamper.click();
-  await expect(tamper).toHaveAttribute('aria-pressed', 'false');
+  await scanAt('signature tampered: the vouching check red, the button pressed and hovered');
 
-  // ── The disclosures, opened the way a reader opens them ────────────────
-  const summaries = page.locator('details > summary');
-  const count = await summaries.count();
-  for (let i = 0; i < count; i += 1) {
-    await summaries.nth(i).click();
-  }
-  await expect(page.locator('details[open]')).toHaveCount(count);
-  await scanAt('both disclosures open: certificate fields and the message parts');
-  for (let i = 0; i < count; i += 1) {
-    await summaries.nth(i).click();
-  }
-  await expect(page.locator('details[open]')).toHaveCount(0);
+  // The chain detail, opened the way a reader opens it -- and it must SURVIVE
+  // the next recomputation.
+  await page.locator('details[data-disclosure="chain"] > summary').click();
+  await expect(page.locator('details[data-disclosure="chain"]')).toHaveJSProperty('open', true);
+  await scanAt('the chain walk open, with a failing link named');
+  await clickKeepingFocus(page, 'tamper-btn', 'restoring the signature');
+  await expect(page.locator('details[data-disclosure="chain"]'), 'an open disclosure must survive a recompute')
+    .toHaveJSProperty('open', true);
+  await scanAt('the chain walk STILL open after a recompute, signature restored');
 
-  // ── The self-signed chain ──────────────────────────────────────────────
-  await page.locator('#site-self-signed').check();
-  await expect(page.locator('#site-self-signed')).toBeChecked();
-  await expect(page.locator('[data-verdict="promise-vouched"]')).toHaveAttribute('data-result', 'fail');
-  await scanAt('self-signed chain: nobody vouched, and the walk says why');
-
-  // ── THE ALARM: every check passes and the verdict is not green ──────────
-  await page.locator('#site-attacker-name').check();
-  await expect(page.locator('#site-attacker-name')).toBeChecked();
+  // ── Step 5: the ALARM ──────────────────────────────────────────────────
+  await page.locator('#step-next').click();
+  await expect(page.locator('[data-claim="step-progress"]')).toHaveText('Step 5 of 5.');
   await expect(page.locator('[data-verdict="padlock"]')).toHaveAttribute('data-result', 'alarm');
-  await expect(page.locator('#promises .check[data-result="pass"]')).toHaveCount(4);
-  await scanAt('ALARM: the attacker chain, every promise passing, verdict not green');
+  await expect(page.locator('#promises .summary-row[data-result="pass"]')).toHaveCount(4);
+  await scanAt('ALARM: the attacker chain, every check passing, the verdict not green');
 
-  // Hover a site row, which repaints its fill.
+  // ── The closing check ──────────────────────────────────────────────────
+  await page.locator('#step-next').click();
+  await expect(page.locator('input[name^="quiz-"]')).toHaveCount(9);
+  await scanAt('the three-question check, unanswered');
+  await page.locator('#quiz-lookalike-yes').check();
+  await expect(page.locator('[data-verdict="quiz-lookalike"]')).toHaveAttribute('data-result', 'fail');
+  await scanAt('a wrong answer, explained, offering the experiment again');
+  await page.locator('#quiz-lookalike-no').check();
+  await expect(page.locator('[data-verdict="quiz-lookalike"]')).toHaveAttribute('data-result', 'pass');
+  await scanAt('a right answer');
+
+  // ── The depth sections, all open at once ───────────────────────────────
+  for (const key of ['wire', 'scope', 'next-all']) {
+    await page.locator(`details[data-disclosure="${key}"] > summary`).click();
+    await expect(page.locator(`details[data-disclosure="${key}"]`)).toHaveJSProperty('open', true);
+  }
+  await scanAt('every depth disclosure open: the bytes, the scope, the other labs');
+
+  // ── Explore mode: every control at once ────────────────────────────────
+  await clickKeepingFocus(page, 'mode-explore', 'switching to explore mode');
+  await expect(page.locator('#address-input')).toHaveCount(1);
+  await expect(page.locator('#date-input')).toHaveCount(1);
+  await expect(page.locator('#tamper-btn')).toHaveCount(1);
+  await scanAt('explore mode: every control on screen at once');
+
+  await page.locator('#site-self-signed').check();
+  await expectFocus(page, 'site-self-signed', 'choosing the self-signed chain');
+  await expect(page.locator('[data-verdict="promise-vouched"]')).toHaveAttribute('data-result', 'fail');
+  await scanAt('explore: the self-signed chain, nobody vouched');
+
+  // Hover is a state, and it persists after a click.
   await page.locator('label[for="site-github-real"]').hover();
   await scanAt('a site row hovered');
 
-  // ── Keyboard focus on each control ─────────────────────────────────────
-  await page.locator('#address-input').focus();
-  await scanAt('the address input focused');
-  await page.locator('#date-input').focus();
-  await scanAt('the date input focused');
-  await page.locator('#reset-btn').focus();
-  await scanAt('the reset button focused');
+  // ── Focus rings on every control type ──────────────────────────────────
+  for (const id of ['address-input', 'date-input', 'reset-btn', 'mode-lesson']) {
+    await page.locator(`#${id}`).focus();
+    await scanAt(`#${id} focused`);
+  }
 
   // ── Back to the arrival state through the page's own control ───────────
-  await page.locator('#reset-btn').click();
+  await clickKeepingFocus(page, 'mode-lesson', 'switching back to the lesson');
   await expect(page.locator('#site-github-real')).toBeChecked();
-  await expect(page.locator('[data-verdict="padlock"]')).toHaveAttribute('data-result', 'pass');
-  await scanAt('reset: back to the state a reader arrives in');
+  await scanAt('back in the lesson, at the state a reader arrives in');
 }

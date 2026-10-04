@@ -71,14 +71,32 @@ test('every marker the page renders is covered by a mutation', async ({ page }) 
     }
   }
 
-  // Arrival, then every state that renders a marker the arrival state does not.
+  // Arrival is the guided lesson, which renders the step and prediction
+  // markers; then the quiz; then explore mode, where every control is at once.
+  await collect()
+
+  // Walk the lesson so the prediction and step markers are seen, and finish it
+  // so the quiz renders its three question verdicts.
+  await page.locator('#step-next').click()
+  await page.locator('#predict-name-must-match-still-padlock').check()
+  await collect()
+  for (let i = 0; i < 4; i += 1) await page.locator('#step-next').click()
+  await expect(page.locator('input[name^="quiz-"]')).toHaveCount(9)
+  for (const q of ['lookalike', 'expiry', 'suffix']) {
+    await page.locator(`#quiz-${q}-yes`).check()
+  }
+  await collect()
+
+  // Explore mode: every failure state, reached through the real controls.
+  await page.locator('#mode-explore').click()
+  await expect(page.locator('#address-input')).toHaveCount(1)
   await collect()
   await page.locator('#address-input').fill('evil.example')
   await collect()
   await page.locator('#address-input').fill('github.com')
-  await page.locator('#date-input').fill('2027-06-01')
+  await page.locator('#preset-expired').click()
   await collect()
-  await page.locator('#date-input').fill('2026-10-04')
+  await page.locator('#preset-valid').click()
   await page.locator('#tamper-btn').click()
   await collect()
   await page.locator('#tamper-btn').click()
@@ -111,6 +129,17 @@ test('every marker a mutation names is still rendered somewhere', async ({ page 
     }
   }
   await collect()
+  // The lesson's own markers, then the quiz's, then the explore-only ones.
+  await page.locator('#step-next').click()
+  await page.locator('#predict-name-must-match-no-padlock').check()
+  await collect()
+  for (let i = 0; i < 4; i += 1) await page.locator('#step-next').click()
+  for (const q of ['lookalike', 'expiry', 'suffix']) {
+    await page.locator(`#quiz-${q}-no`).check()
+  }
+  await collect()
+  await page.locator('#mode-explore').click()
+  await expect(page.locator('#tamper-btn')).toHaveCount(1)
   await page.locator('#tamper-btn').click()
   await collect()
   await page.locator('#tamper-btn').click()

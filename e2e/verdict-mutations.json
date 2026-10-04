@@ -140,8 +140,8 @@
     },
     "operator-identity-established": {
       "file": "src/pki/assess.ts",
-      "find": "    outcome: 'not-established',\n    headline: 'Not that the company is who it says',",
-      "replace": "    outcome: 'pass',\n    headline: 'Not that the company is who it says',",
+      "find": "    outcome: 'not-established',\n    plain: 'Not established',\n    headline: 'Not that the company is who it says',",
+      "replace": "    outcome: 'pass',\n    plain: 'Not established',\n    headline: 'Not that the company is who it says',",
       "kills": {
         "nonpromise-operator": {
           "test": "3. the limitation is on screen in that state, as the lab's own check",
@@ -275,6 +275,96 @@
         }
       },
       "why": "Re-introduces the exact bug this lab shipped and then fixed: the every-check-passed value ignoring the expiry check, so the page read NO PADLOCK at the top and 'Every check above passed' a few hundred pixels down. A page that contradicts itself teaches whichever half the reader read, and nothing caught it because the honesty row was only asserted in the state where every check really does pass."
+    },
+    "prediction-scoring-inverted": {
+      "file": "src/ui/render.ts",
+      "find": "          'data-verdict': 'prediction',\n          'data-result': picked?.correct ? 'pass' : 'fail',",
+      "replace": "          'data-verdict': 'prediction',\n          'data-result': picked?.correct ? 'fail' : 'pass',",
+      "kills": {
+        "prediction": {
+          "test": "a prediction is scored against the option the reader picked",
+          "claim": {
+            "contains": "predicted correctly",
+            "result": "pass"
+          }
+        }
+      },
+      "why": "Inverts the prediction verdict, so a reader who predicts correctly is told they were wrong. A lesson that mis-scores a prediction teaches the opposite of the step it belongs to, and the reader has no way to tell which of the two is lying."
+    },
+    "quiz-scoring-inverted": {
+      "file": "src/ui/render.ts",
+      "find": "            'data-verdict': `quiz-${q.id}`,\n            'data-result': picked?.correct ? 'pass' : 'fail',",
+      "replace": "            'data-verdict': `quiz-${q.id}`,\n            'data-result': picked?.correct ? 'fail' : 'pass',",
+      "kills": {
+        "quiz-lookalike": {
+          "test": "a wrong answer is explained and offers the experiment again",
+          "claim": {
+            "contains": "Not quite",
+            "result": "fail"
+          }
+        },
+        "quiz-expiry": {
+          "test": "a right answer is scored right, and the count is computed",
+          "claim": {
+            "contains": "That is right",
+            "result": "pass"
+          }
+        },
+        "quiz-suffix": {
+          "test": "a right answer is scored right, and the count is computed",
+          "claim": {
+            "contains": "That is right",
+            "result": "pass"
+          }
+        }
+      },
+      "why": "Inverts the closing check's scoring. One edit covers all three questions because all three go through the same scorer -- which is the point: the shared path is what makes a single mutation meaningful rather than three copies of one."
+    },
+    "step-progress-off-by-one": {
+      "file": "src/ui/render.ts",
+      "find": "      text: `Step ${step.ordinal} of ${STEPS.length}.`,",
+      "replace": "      text: `Step ${step.ordinal + 1} of ${STEPS.length}.`,",
+      "kills": {
+        "step-progress": {
+          "test": "the expiry step shows the dates failing and the signatures holding",
+          "claim": {
+            "text": "Step 3 of 5."
+          }
+        }
+      },
+      "why": "Makes the stated step disagree with the step the reader is actually on. The lesson's baselines are keyed to the step index, so a reader following a mislabelled step is doing a different experiment than the one described beside it."
+    },
+    "quiz-count-off-by-one": {
+      "file": "src/ui/render.ts",
+      "find": "      text: `${answered} of ${QUESTIONS.length} answered, ${right} right.`,",
+      "replace": "      text: `${answered} of ${QUESTIONS.length} answered, ${right + 1} right.`,",
+      "kills": {
+        "quiz-progress": {
+          "test": "three questions appear only after the lesson is finished",
+          "claim": {
+            "text": "0 of 3 answered, 0 right."
+          }
+        }
+      },
+      "why": "Inflates the right-answer count, so the page credits an answer nobody gave."
+    },
+    "change-summary-blind": {
+      "file": "src/ui/summary.ts",
+      "find": "  const broke = promiseIds.filter((id) => before[id] === 'pass' && after[id] === 'fail')",
+      "replace": "  const broke = promiseIds.filter((id) => before[id] === 'fail' && after[id] === 'fail')",
+      "kills": {
+        "changed": {
+          "test": "the causal summary names what changed AND what did not",
+          "claim": {
+            "contains": [
+              "Changed: the address",
+              "The name now fails",
+              "still check out"
+            ]
+          }
+        }
+      },
+      "why": "Stops the causal summary noticing what the reader just broke, so it reports 'No check changed its answer' at the exact moment one did. The summary exists because the page recomputes eight verdicts at once; one that lies about causation is worse than none."
     }
   }
 }

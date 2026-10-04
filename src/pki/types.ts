@@ -13,6 +13,16 @@ export interface CheckResult {
   readonly id: string
   readonly outcome: Outcome
   readonly headline: string
+  /**
+   * The two-or-three-word state, in plain language: "Matches", "In date",
+   * "Signature verifies". This is what a beginner reads first and often all
+   * they need; the `detail` behind it is for when they want more.
+   *
+   * On a FAILURE the detail is shown anyway -- the cause of a failure is never
+   * optional reading, which is the one asymmetry in the progressive-disclosure
+   * rule here.
+   */
+  readonly plain: string
   readonly detail: string
   readonly evidence: readonly { label: string; value: string }[]
 }
