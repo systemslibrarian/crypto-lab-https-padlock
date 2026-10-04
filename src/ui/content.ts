@@ -39,7 +39,7 @@ export const PADLOCK_HEADING = 'The padlock'
 export const CHAIN_HEADING = 'Who vouched for this, and why you believe them'
 
 export const CHAIN_LEDE =
-  'Each certificate was signed by the one below it. Follow it down far enough and you arrive at a certificate nobody signed for you -- it was already on your device.'
+  'Each certificate was signed by the one above it in this list. Follow it far enough and you arrive at a certificate the server never sent at all -- it came from a list of roots that was already trusted before you visited. On a real device that list ships with your operating system or browser. This lab carries its own copy of one, so you can see where the chain stops.'
 
 export const PROMISES_HEADING = 'The four things the padlock proves'
 
@@ -54,20 +54,21 @@ export const NONPROMISES_LEDE =
 export const WIRE_HEADING = 'The first message your browser sends'
 
 export const WIRE_LEDE =
-  'Before any encryption exists, your browser has to tell the server which site it wants, so the server knows which certificate to send. Here is that message, byte for byte, with the name highlighted.'
+  'Before any encryption exists, your browser has to tell the server which site it wants, so the server knows which certificate to send. Here is that message, byte for byte, with the name highlighted. This lab encodes it and never sends it.'
 
 export const SCOPE_HEADING = 'What is real here, and what is not'
 
 export const SCOPE_REAL = [
-  'The certificates are real. The one for github.com was captured from the public internet on 4 October 2026; the two trust anchors came out of a real operating system trust store.',
+  'The certificates are real. The one for github.com was captured from the public internet on 4 October 2026; the two trusted roots came out of a real operating system trust store on the same day.',
   'Every signature check runs in your browser through WebCrypto, over the real certificate bytes. Flip one bit and it fails, because it is actually being checked.',
-  'The first-message bytes are a real TLS 1.3 ClientHello, encoded to RFC 8446 and RFC 6066.',
+  'The first-message bytes are a real TLS 1.3 ClientHello, with the four extensions RFC 8446 requires of a client expecting a certificate, and a real X25519 public key generated here.',
 ]
 
 export const SCOPE_NOT = [
-  'This lab makes no network connection and runs no handshake. It reads certificates that were already captured; it does not watch TLS happen.',
+  'This lab makes no network connection and runs no handshake. It reads certificates that were already captured; it does not watch TLS happen. The first message is encoded and never sent, and the private half of its key is thrown away.',
   'Its path checking is a teaching subset of RFC 5280. It does not check revocation, name constraints, policy constraints, or path length -- so a chain this page accepts is not thereby a chain a browser would accept. Chain of Trust is the lab for that.',
-  'The random bytes in the first message are real randomness, but no handshake follows them, so no key is actually exchanged.',
+  'The list of trusted roots here is THIS LAB\'S copy, not your device\'s. The lab cannot read what your machine trusts and does not change it. Real lists differ between operating systems, browsers and workplace policy -- and this one has an extra root no real device carries, added on purpose so you can watch a perfect certificate for a name that is not your bank.',
+  'Browsers no longer all draw a padlock. Chrome replaced its lock with a neutral icon in 2023, because the lock was read as a safety badge -- which is the misreading this page is about. The ideas here are the same whatever the icon looks like.',
   'This is a teaching demo, not production code.',
 ]
 

@@ -16,27 +16,39 @@ export const PEM = {
 } as const
 
 /**
- * The device trust store.
+ * This lab's EXAMPLE trust store.
  *
- * Two real anchors lifted out of the macOS system store, and one toy anchor
- * this lab adds so the attacker-name exhibit can be walked to completion. The
- * `why` strings are quoted on the page, because "why is this trusted" is the
- * question promise 3 exists to answer and the answer is never cryptographic.
+ * Named carefully. It is not your device's trust store: this lab never reads,
+ * and could never change, what your machine trusts. It is a committed copy of
+ * two anchors that really were in the macOS system store on 2026-10-04, plus
+ * one toy anchor this lab adds so the attacker-name exhibit can be walked to
+ * completion.
+ *
+ * Saying "already on your device" would have been the easy phrasing and a false
+ * one -- the honest claim is about where a real device gets this list, which is
+ * the same lesson without the overreach. Real lists differ between operating
+ * systems, browsers and enterprise policy.
+ *
+ * The `why` strings are quoted on the page, because "why is this trusted" is
+ * the question promise 3 exists to answer and the answer is never
+ * cryptographic.
  */
-export const DEVICE_STORE = makeStore([
+export const LAB_TRUST_STORE = makeStore([
   {
     pem: storeSectigo,
-    why: 'Your operating system vendor shipped it. That is the entire reason.',
+    why: 'A real device gets this list from its operating system or browser vendor, who decided to include this root. That decision is the entire reason -- nothing in the chain argues for it. This lab ships its own copy of that list so the walk can finish offline.',
   },
   {
     pem: storeUsertrust,
-    why: 'Your operating system vendor shipped it. That is the entire reason.',
+    why: 'A real device gets this list from its operating system or browser vendor, who decided to include this root. That decision is the entire reason -- nothing in the chain argues for it. This lab ships its own copy of that list so the walk can finish offline.',
   },
   {
     pem: toyRoot,
-    why: 'This lab put it here, so you can watch what happens when a certificate authority you trust signs a name an attacker controls.',
+    why: 'This lab put it in its own example store, so you can watch what happens when a certificate authority the list trusts signs a name an attacker controls. No real device trusts this root.',
   },
 ])
+
+
 
 export interface Scenario {
   readonly id: string

@@ -1,6 +1,6 @@
 import type * as x509 from '@peculiar/x509'
 import { human } from './clock'
-import { DEVICE_STORE, type Scenario } from './fixtures'
+import { LAB_TRUST_STORE, type Scenario } from './fixtures'
 import { matchName } from './hostname'
 import {
   commonName, dnsNames, keyDescription, organization, parsePem, signatureDescription,
@@ -45,18 +45,25 @@ export interface AssessInput {
 }
 
 /**
- * Promise 1 -- the traffic is encrypted.
+ * Promise 1 -- there is a usable key, and what it is actually FOR.
  *
  * The one promise this lab does not have to argue for, and the one it must be
- * most careful about. This lab runs no handshake (a stated non-goal), so it
- * cannot and does not claim to have observed encryption. What it CAN show is
- * the thing the handshake needs: a real public key, of a real named type, that
- * WebCrypto can import. So the check reports on the key, and says in as many
- * words that the encryption itself happens elsewhere.
+ * most careful about, in two ways.
  *
- * Reporting this as a green "encrypted: yes" would be the lab asserting
- * something it never measured, which is the failure mode the whole template
- * exists to prevent.
+ * First, this lab runs no handshake (a stated non-goal), so it cannot and does
+ * not claim to have observed encryption. Reporting a green "encrypted: yes"
+ * would be the lab asserting something it never measured.
+ *
+ * Second -- and this was wrong here until it was corrected -- the certificate's
+ * public key is NOT the key your traffic is encrypted to. That was RSA key
+ * transport, and TLS 1.3 removed it. In TLS 1.3 the certificate's key does one
+ * job: the server signs part of the handshake with the private half
+ * (CertificateVerify, RFC 8446 section 4.4.3) and the client checks that
+ * signature with this public half. The encryption keys come from a separate
+ * ephemeral (EC)DHE exchange that this certificate has no part in. Calling this
+ * "a key to encrypt to" taught a beginner something false about the protocol
+ * while every test stayed green, which is exactly the kind of claim 4.1b
+ * exists to catch.
  */
 async function checkKey(leaf: x509.X509Certificate): Promise<CheckResult> {
   // IMPORTED, not merely parsed. An earlier version of this function returned
@@ -77,15 +84,19 @@ async function checkKey(leaf: x509.X509Certificate): Promise<CheckResult> {
   return {
     id: 'promise-key',
     outcome: imported ? 'pass' : 'fail',
-    headline: imported ? 'There is a key to encrypt to' : 'The key cannot be used',
+    headline: imported ? 'The certificate carries a usable key' : 'The key cannot be used',
     detail: imported
-      ? 'Your browser loaded the certificate\'s public key and it works, so there is something here to set up encryption with. ' +
-        'The encryption itself happens in the handshake, which this lab does not run -- see TLS Handshake for that part.'
-      : 'This certificate carries a public key your browser cannot load, so no handshake could start from it -- whatever else about the certificate is in order.',
+      ? 'Your browser loaded the certificate\'s public key and it works. This key is how the site proves it really holds the matching private key: ' +
+        'during the handshake the server signs a piece of the conversation, and your browser checks that signature with this key. ' +
+        'It is NOT the key your traffic is encrypted with -- that one is agreed separately and freshly for each connection. ' +
+        'Neither step happens in this lab; see TLS Handshake for both.'
+      : 'This certificate carries a public key your browser cannot load, so the site could not prove it holds the matching private key -- whatever else about the certificate is in order.',
     evidence: [
       { label: 'Key type', value: keyDescription(leaf) },
       { label: 'Loaded by your browser', value: imported ? 'yes' : 'no' },
-      { label: 'Signed with', value: signatureDescription(leaf) },
+      { label: 'What this key is for', value: 'checking the server\'s handshake signature' },
+      { label: 'Encrypts your traffic', value: 'no -- a separate key is agreed per connection' },
+      { label: 'This certificate signed with', value: signatureDescription(leaf) },
     ],
   }
 }
@@ -122,14 +133,14 @@ function checkVouched(path: PathResult): CheckResult {
   return {
     id: 'promise-vouched',
     outcome: ok ? 'pass' : 'fail',
-    headline: ok ? 'Somebody vouched for it' : 'Nobody your device trusts vouched for it',
+    headline: ok ? 'Somebody vouched for it' : 'Nobody in the trusted list vouched for it',
     detail: ok
-      ? `Each certificate was signed by the next one up, and the chain ends at "${root?.name ?? 'a root'}" -- which your device already had. ${path.anchorWhy}`
+      ? `Each certificate was signed by the next one up, and the chain ends at "${root?.name ?? 'a root'}" -- a root the server never sent, taken from the trusted list instead. ${path.anchorWhy}`
       : path.reason,
     evidence: [
       { label: 'Signatures checked', value: `${verified} of ${links}` },
-      { label: 'Ends at', value: root?.name ?? 'nothing your device holds' },
-      { label: 'Root came from', value: root?.fromStore ? 'your device' : 'the server' },
+      { label: 'Ends at', value: root?.name ?? 'nothing in the trusted list' },
+      { label: 'Root came from', value: root?.fromStore ? "this lab's trusted list" : 'the server' },
     ],
   }
 }
@@ -162,8 +173,7 @@ function checkTime(leaf: x509.X509Certificate, at: Date): CheckResult {
  * mean to visit, the correct rendering is ALARM: the result is right and the
  * reader is about to misunderstand it.
  */
-function checkHonest(scenario: Scenario, pathOk: boolean, nameOk: boolean): CheckResult {
-  const everythingPassed = pathOk && nameOk
+function checkHonest(scenario: Scenario, everythingPassed: boolean): CheckResult {
   return {
     id: 'nonpromise-honest',
     outcome: 'not-established',
@@ -222,11 +232,13 @@ function checkSni(address: string, hostnameInBytes: string, offset: number): Che
     headline: 'Not that the hostname was private',
     detail:
       `Before any encryption exists, your browser sends the name of the site in the clear so the server knows which certificate to offer. ` +
-      `It is readable at byte ${offset} of the very first message, below. Anyone who can see your traffic can see which sites you visit, even though they cannot see what you do there.`,
+      `It is readable at byte ${offset} of the first message below, so anyone on the network path can see which site you asked for in this example. ` +
+      `A newer extension called Encrypted ClientHello hides it, and this message does not use one. What the network still cannot read is the contents of your traffic -- though the site you are talking to obviously can.`,
     evidence: [
       { label: 'Name sent in the clear', value: hostnameInBytes },
       { label: 'Matches the address', value: hostnameInBytes === address ? 'yes' : 'no' },
-      { label: 'Hostname privacy', value: 'not provided' },
+      { label: 'Encrypted ClientHello used', value: 'no -- which is why it is readable here' },
+      { label: 'Hostname privacy', value: 'not provided in this example' },
     ],
   }
 }
@@ -238,12 +250,14 @@ function checkStrength(suites: readonly string[]): CheckResult {
     outcome: 'not-established',
     headline: 'Not that the strongest cryptography was used',
     detail:
-      'Your browser and the server agree on which encryption to use at the very start of the connection -- in the same unprotected message as the hostname, before either side has proved who it is. ' +
-      'Nothing signs that agreement until later, which is why stripping it down is an attack worth knowing about.',
+      'Your browser and the server agree on which encryption to use at the very start, in the same unprotected message as the hostname, before either side has proved who it is. ' +
+      'TLS 1.3 does check afterwards that nobody altered that conversation -- the handshake signs its own transcript -- so this is not a free downgrade, and that is worth being clear about. ' +
+      'What a padlock still does not tell you is which of these was actually chosen, or whether it was the strongest one both sides could have managed.',
     evidence: [
       { label: 'Offered in the clear', value: `${suites.length} cipher suites` },
-      { label: 'Signed at this point', value: 'no -- nobody has authenticated yet' },
-      { label: 'Strongest choice guaranteed', value: 'not established' },
+      { label: 'Authenticated at this moment', value: 'no -- nobody has authenticated yet' },
+      { label: 'Checked later in the handshake', value: 'yes -- TLS 1.3 signs the transcript' },
+      { label: 'Which one was chosen', value: 'not shown by a padlock' },
     ],
   }
 }
@@ -290,16 +304,22 @@ export async function assess(input: AssessInput, wire: WireFacts): Promise<Asses
   const leaf = input.tamperedLeaf ?? chain[0]!
   const effectiveChain = [leaf, ...chain.slice(1)]
 
-  const path = await validatePath(effectiveChain, DEVICE_STORE, at)
+  const path = await validatePath(effectiveChain, LAB_TRUST_STORE, at)
 
   const key = await checkKey(leaf)
   const name = checkName(leaf, address)
   const vouched = checkVouched(path)
   const time = checkTime(leaf, at)
   const promises = [key, name, vouched, time]
+  const everyPromisePassed = promises.every((p) => p.outcome === 'pass')
 
   const nonPromises = [
-    checkHonest(scenario, vouched.outcome === 'pass', name.outcome === 'pass'),
+    // ONE value, derived from the actual promise results, used everywhere.
+    // This used to be `pathOk && nameOk`, which ignored expiry and the key --
+    // so an expired certificate rendered "NO PADLOCK" at the top of the page
+    // and "Every check above passed" a few hundred pixels below it. A page that
+    // contradicts itself teaches whichever half the reader happened to read.
+    checkHonest(scenario, everyPromisePassed),
     checkOperator(leaf),
     checkSni(address, wire.hostnameInBytes, wire.sniOffset),
     checkStrength(wire.cipherSuiteNames),

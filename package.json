@@ -15,7 +15,8 @@
     "test:verdicts": "playwright test --project=claims --project=coverage",
     "mint:toy": "node scripts/mint-toy-pki.mjs",
     "mutate": "node scripts/mutate.mjs",
-    "test:mutation": "node scripts/mutate.mjs run"
+    "test:mutation": "node scripts/mutate.mjs run",
+    "sync:kills": "node scripts/sync-kill-claims.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",

@@ -13,7 +13,7 @@ import type { Link, Role } from './types'
  *   - the parent is allowed to sign certificates (basicConstraints CA:TRUE);
  *   - every certificate in the path is inside its validity window.
  *
- * And it requires the path to END at a certificate the device's store holds.
+ * And it requires the path to END at a certificate the trust store holds.
  *
  * What it does NOT do, each of which is a non-goal in brief.md: revocation
  * (OCSP or CRL), name constraints, policy constraints, path-length constraints,
@@ -168,9 +168,9 @@ export async function validatePath(
     reachedAnchor = true
     anchorWhy = held.why
   } else if (isSelfIssued(top)) {
-    reason = reason || `${label(top)} signed itself, and your device does not have it. Anyone can sign their own certificate, so a signature from the same name it is claiming proves nothing.`
+    reason = reason || `${label(top)} signed itself, and it is not in the trusted list. Anyone can sign their own certificate, so a signature from the same name it is claiming proves nothing.`
   } else {
-    reason = reason || `The chain stops at ${label(top)}, which was signed by ${label2(top)} -- and that certificate is neither in the chain nor on your device. The walk has nowhere left to go.`
+    reason = reason || `The chain stops at ${label(top)}, which was signed by ${label2(top)} -- and that certificate is neither in the chain nor in the trusted list. The walk has nowhere left to go.`
   }
 
   const allInDate = steps.every((s) => s.inDate)

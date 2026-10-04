@@ -27,6 +27,40 @@ function normalise(name: string): string {
 }
 
 /**
+ * Pull the hostname out of whatever the reader typed.
+ *
+ * A reader asked for "the address you think you are visiting" will paste
+ * `https://github.com/` -- it is the thing in their address bar. Treating that
+ * as a hostname made the name check fail and told them a browser would refuse
+ * the connection, which is both wrong and the opposite of the lesson: a browser
+ * extracts the host and matches THAT. Worse, the whole URL went into the SNI
+ * exhibit, so the page showed a first message no browser would ever send.
+ *
+ * So the input is parsed the way a browser parses it: scheme stripped, userinfo
+ * dropped, port dropped, path and query dropped. What is left is compared.
+ * Anything that still is not a plain DNS name is refused by `isPlainDnsName`
+ * rather than guessed at.
+ */
+export function hostFromInput(raw: string): string {
+  let s = raw.trim()
+  if (s === '') return ''
+  // Scheme, if any.
+  s = s.replace(/^[a-z][a-z0-9+.-]*:\/\//i, '')
+  // Anything before an @ is userinfo, not a host.
+  const at = s.lastIndexOf('@')
+  if (at !== -1) s = s.slice(at + 1)
+  // Path, query or fragment ends the authority.
+  s = s.split(/[/?#]/)[0] ?? ''
+  // A bracketed IPv6 literal is not a DNS name; leave it intact and let
+  // isPlainDnsName refuse it rather than mangling it into something plausible.
+  if (s.startsWith('[')) return normalise(s)
+  // Port.
+  const colon = s.indexOf(':')
+  if (colon !== -1) s = s.slice(0, colon)
+  return normalise(s)
+}
+
+/**
  * Letters, digits, hyphen, dot. Deliberately strict: a name carrying anything
  * else -- a space, a slash, a non-ASCII character, an embedded NUL -- is not
  * something this lab will quietly normalise into a match. Fail closed.
@@ -59,7 +93,8 @@ export function matchesOne(address: string, san: string): { matched: boolean; wi
  * than only the answer.
  */
 export function matchName(address: string, presented: readonly string[]): NameMatch {
-  const clean = normalise(address)
+  // A browser matches the HOST, not the URL the reader typed. See hostFromInput.
+  const clean = hostFromInput(address)
   if (!isPlainDnsName(clean)) {
     return { address: clean, matched: false, via: '', presented, wildcard: false }
   }

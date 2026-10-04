@@ -111,7 +111,7 @@ export function renderChain(host: Element, a: Assessment): void {
   a.path.steps.forEach((step, i) => {
     const role = step.role === 'leaf' ? 'THE SITE' : step.role === 'root' ? 'THE ROOT' : 'IN BETWEEN'
     const note = step.fromStore
-      ? 'This one was already on your device. Nobody sent it to you, and nothing in the chain vouches for it -- this is where the trust actually comes from.'
+      ? 'This one was NOT sent by the server. It came from the trusted list -- on a real device, the list your operating system or browser ships. Nothing in the chain vouches for it, and that is exactly where the trust actually comes from.'
       : step.role === 'leaf'
         ? 'The certificate the site presented for itself.'
         : 'Sent by the server to join the site up to a root.'
@@ -161,7 +161,7 @@ export function renderChain(host: Element, a: Assessment): void {
       el('p', {
         text: a.path.reachedAnchor
           ? a.path.anchorWhy
-          : 'The walk never reached a root your device holds, so there is nothing here to believe.',
+          : 'The walk never reached a root in the trusted list, so there is nothing here to believe.',
       }),
     ]),
     detailsBytes('Show the certificate fields', fieldTable(a)),
@@ -265,7 +265,14 @@ export function renderWire(host: Element, hello: ClientHello): void {
           'out of this message. They cannot read what you do on the site. They can read that you went there.',
       }),
     ]),
-    el('p', { class: 'hint', text: `This lab encodes the message; it never sends it. The address used is the one you set above.` }),
+    el('p', {
+      class: 'hint',
+      text:
+        `This lab encodes the message and never sends it. The name in it is the host from the address you set above. ` +
+        (hello.keyShareIsReal
+          ? 'The key share is a real X25519 public key generated here; its private half was discarded without being used.'
+          : 'This browser has no X25519, so the key share is random bytes rather than a real public key -- said plainly rather than claimed either way.'),
+    }),
     el('p', { class: 'hint', text: `Encryption methods offered, in the clear: ${hello.cipherSuiteNames.join(', ')}.` }),
   )
 }

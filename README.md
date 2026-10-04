@@ -24,9 +24,12 @@ find the hostname in it yourself.
   RFC 8446 (TLS 1.3 `ClientHello`), RFC 6066 (server_name / SNI), RFC 6125 (name matching).
   Signatures are real ECDSA over P-256 and P-384, verified in `SubtleCrypto`.
 - **The security model.** The lab reads certificates that were already captured. It makes no
-  network connection and runs no handshake, so it never claims to have *observed* encryption —
-  only to have parsed the key a handshake would use. Trust terminates in a device trust store,
-  which is an axiom the lab names rather than hides.
+  network connection and runs no handshake, so it never claims to have *observed* encryption.
+  What it does claim about the certificate's key is narrow and correct: in TLS 1.3 that key
+  checks the server's handshake signature, and it is **not** the key your traffic is encrypted
+  to — that was RSA key transport, which TLS 1.3 removed. Trust terminates in a list of roots
+  that is **this lab's own copy**, not your device's; the lab cannot read or change what your
+  machine trusts, and says so on the page.
 - **Not production crypto.** This is a teaching demo. Its path validation deliberately omits
   revocation, name constraints, policy constraints and path length, so a chain this page
   accepts is **not** thereby a chain a browser would accept.
@@ -36,10 +39,10 @@ find the hostname in it yourself.
 | Real | Not real, or not here |
 |---|---|
 | The `github.com` chain, captured from the public internet on 2026-10-04 | Any live network connection or TLS handshake |
-| Two trust anchors lifted from a real macOS system trust store | Revocation (OCSP/CRL), name constraints, policy constraints, path length |
-| Every signature check, in WebCrypto, over real DER | The key exchange — real random bytes are generated, but no handshake follows them |
-| The toy hierarchy: real P-256 keys, real signatures over real TBS bytes | The toy root's *trustworthiness* — no device carries it; the lab adds it on purpose |
-| The `ClientHello` bytes, encoded to RFC 8446 and RFC 6066 | Sending that message anywhere |
+| Two roots lifted from a real macOS system trust store | Your device's actual trust list — this is the lab's committed copy of one, plus an extra toy root |
+| Every signature check, in WebCrypto, over real DER | Revocation (OCSP/CRL), name constraints, policy constraints, path length |
+| The toy hierarchy: real P-256 keys, real signatures over real TBS bytes | The toy root's *trustworthiness* — no real device carries it; the lab adds it on purpose |
+| The `ClientHello`: correct lengths, a real X25519 public key, and the four extensions RFC 8446 §9.2 requires | Sending that message, or using the key — the private half is discarded unused |
 
 The certificates and their provenance are documented in [`certs/PROVENANCE.md`](certs/PROVENANCE.md),
 including the command each was captured with.
@@ -55,8 +58,9 @@ including the command each was captured with.
 3. **The chain walk.** Leaf, intermediate, root, drawn as boxes with the verdict on each
    signature between them. The last box is marked as the one that came from *your device* —
    nobody sent it to you, and nothing in the chain vouches for it.
-4. **The four promises.** A key to encrypt to; the name matches; somebody vouched; it has not
-   expired. Each one shows the value it actually read.
+4. **The four promises.** A usable key — imported by WebCrypto, with what it is actually for
+   spelled out; the name matches, under RFC 6125, after extracting the host from whatever you
+   typed; somebody vouched; it has not expired. Each one shows the value it actually read.
 5. **Break it yourself.** Type an address the certificate is not for. Move the date past the
    expiry. Flip one bit of the signature. Each failure is produced by the real validator, and
    the page names the actual cause.
@@ -97,11 +101,15 @@ Choose a site, then try to break each promise in turn: retype the address, drag 
 - **Expecting a domain-validated certificate to identify a company.** It attests control of a
   name. `CN=github.com` carries no organization field at all, and its issuing CA has `DV` in
   its own name.
-- **Assuming the hostname is private.** It is in the clear in the first packet.
-  [Blind Hello](https://systemslibrarian.github.io/crypto-lab-blind-hello/) is the fix.
+- **Assuming the hostname is private.** It is in the clear in the first packet, in this
+  example — Encrypted ClientHello is the extension that hides it, and this message does not
+  use one. [Blind Hello](https://systemslibrarian.github.io/crypto-lab-blind-hello/) is the lab
+  for that fix.
 - **Assuming the best cryptography was negotiated.** Negotiation happens before anyone has
-  authenticated. [Downgrade Wire](https://systemslibrarian.github.io/crypto-lab-downgrade-wire/)
-  is what happens when someone strips it.
+  authenticated — though TLS 1.3 *does* check afterwards that the conversation was not
+  altered, so this is not a free downgrade. What a padlock still does not tell you is which
+  option was chosen.
+  [Downgrade Wire](https://systemslibrarian.github.io/crypto-lab-downgrade-wire/) goes into it.
 - **Trusting a chain because it validates.** Validation is a statement about signatures, names
   and dates. The lab's own store contains a toy root precisely so you can watch a perfect
   validation of a certificate you should not trust.
@@ -150,15 +158,16 @@ npm run mint:toy     # re-mint the toy hierarchy (rotates its keys)
 
 ## Build & Verify
 
-**49 unit tests** (Vitest), all passing, across five files:
+**57 unit tests** (Vitest), all passing, across six files:
 
 | File | What it proves |
 |---|---|
 | `src/pki/kat.test.ts` | **13 known-answer tests.** Every vendored chain parses to the subject, issuer, serial, validity window, SANs and SHA-256 fingerprint that `openssl x509` reports. The expected values are literals read out of the certificates *before* this lab could parse them. |
-| `src/pki/hostname.test.ts` | RFC 6125 matching: exact names, wildcards standing for exactly one label, the ignored Common Name, and fail-closed behaviour on anything that is not a plain DNS name. |
+| `src/pki/hostname.test.ts` | RFC 6125 matching: exact names, wildcards standing for exactly one label, the ignored Common Name, host extraction from a pasted URL the way a browser does it, and fail-closed behaviour on anything that is not a plain DNS name. |
 | `src/pki/path.test.ts` | The correct path accepts the good chain and **rejects every bad one** — missing intermediate, one-byte signature alteration, expired, self-signed leaf, a root the device does not hold, and a parent not permitted to sign. |
 | `src/pki/assess.test.ts` | Every verdict the page renders, computed: which checks fail for which breakage, that promise 1 reports a key WebCrypto actually **imported** rather than a parsed field, and that the attacker fixture renders **ALARM** rather than a green success. |
-| `src/tls/clienthello.test.ts` | The `ClientHello` encoder, checked by an **independent structural walk** of the TLS message that shares no arithmetic with the encoder's own offsets. |
+| `src/tls/clienthello.test.ts` | The `ClientHello` encoder, checked by an **independent structural walk** of the TLS message that shares no arithmetic with the encoder's own offsets, plus a check that all five required extensions are present and that the browser path really produces an X25519 key. |
+| `src/tls/span.test.ts` | The declared position of the hostname against a byte search, at every length from 1 to 200 — including the n=97 case where the name's own length prefix encodes as the letter `a` and a naive search lands one byte early. |
 
 **The accessibility gate** (`npm run test:a11y`) scans the *production build* in Chromium for
 zero WCAG 2.1 A/AA violations, at **1280, 390 and 320 px**, across every state the lab

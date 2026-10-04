@@ -3,7 +3,8 @@ import { assess, type Assessment } from './pki/assess'
 import { tamperSignature } from './pki/break'
 import { CLOCK_MAX, CLOCK_MIN, DEFAULT_AT, fromDateInput, toDateInput } from './pki/clock'
 import { SCENARIOS, scenario } from './pki/fixtures'
-import { freshClientHello, type ClientHello } from './tls/clienthello'
+import { hostFromInput } from './pki/hostname'
+import { freshClientHello } from './tls/clienthello'
 import * as copy from './ui/content'
 import { el, fill, list } from './ui/dom'
 import { renderChain, renderNonPromises, renderPadlock, renderPromises, renderWire } from './ui/render'
@@ -192,20 +193,40 @@ function renderControls(): void {
 
 /* ── The render pass ──────────────────────────────────────────────────────── */
 
-let hello: ClientHello | null = null
+/**
+ * Monotonic token, so a slow pass cannot paint over a newer one.
+ *
+ * `refresh()` is async -- it generates an X25519 key and runs several WebCrypto
+ * verifications -- and it is called straight from an `input` handler, so typing
+ * an address starts one pass per keystroke. Without a token the passes race:
+ * whichever finishes last wins, which on a slow machine can be an older one,
+ * and the page would then show a verdict for an address the reader has already
+ * replaced. Reading `state` at the top and checking the token at the bottom
+ * means every rendered pass is internally consistent and only the newest one
+ * paints.
+ */
+let renderToken = 0
 
 async function refresh(): Promise<void> {
+  const token = ++renderToken
+
+  // An immutable snapshot. Nothing below reads `state` again, so a verdict and
+  // the bytes beside it are always from the same inputs.
   const s = scenario(state.scenarioId)
+  const input = { address: state.address, at: state.at, tampered: state.tampered }
+
   // The first message is re-encoded whenever the address changes, because the
   // address is literally what goes in it -- that is the exhibit.
-  hello = freshClientHello(state.address || s.site)
+  // The host, not the URL: a browser puts the hostname in SNI, and showing a
+  // pasted URL there would be a first message no browser would ever send.
+  const hello = await freshClientHello(hostFromInput(input.address) || s.site)
 
   const a: Assessment = await assess(
     {
       scenario: s,
-      address: state.address,
-      at: state.at,
-      tamperedLeaf: state.tampered ? tamperSignature(s.chain[0]!) : undefined,
+      address: input.address,
+      at: input.at,
+      tamperedLeaf: input.tampered ? tamperSignature(s.chain[0]!) : undefined,
     },
     {
       hostnameInBytes: hello.hostnameInBytes,
@@ -213,6 +234,10 @@ async function refresh(): Promise<void> {
       cipherSuiteNames: hello.cipherSuiteNames,
     },
   )
+
+  // A newer refresh started while this one was awaiting. Drop this pass rather
+  // than painting a stale verdict over a fresh one.
+  if (token !== renderToken) return
 
   renderPadlock(need('padlock'), a)
   renderChain(need('chain'), a)

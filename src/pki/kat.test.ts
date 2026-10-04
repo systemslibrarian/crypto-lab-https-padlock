@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { CAPTURED_AT } from './clock'
-import { DEVICE_STORE, PEM, SCENARIOS } from './fixtures'
+import { LAB_TRUST_STORE, PEM, SCENARIOS } from './fixtures'
 import { commonName, dnsNames, fingerprint, isCa, isSelfIssued, keyDescription, organization, parsePem } from './parse'
 import { validatePath } from './path'
 
@@ -93,7 +93,7 @@ describe('KAT: the toy hierarchy parses to its minted values', () => {
 describe('the correct path accepts the good chains', () => {
   it('accepts the real github.com chain as of the capture instant', async () => {
     const chain = SCENARIOS[0]!.chain.map(parsePem)
-    const result = await validatePath(chain, DEVICE_STORE, CAPTURED_AT)
+    const result = await validatePath(chain, LAB_TRUST_STORE, CAPTURED_AT)
     expect(result.reason).toBe('')
     expect(result.trusted).toBe(true)
     expect(result.reachedAnchor).toBe(true)
@@ -103,7 +103,7 @@ describe('the correct path accepts the good chains', () => {
 
   it('accepts the attacker-name chain -- and that is the lesson', async () => {
     const chain = SCENARIOS[1]!.chain.map(parsePem)
-    const result = await validatePath(chain, DEVICE_STORE, CAPTURED_AT)
+    const result = await validatePath(chain, LAB_TRUST_STORE, CAPTURED_AT)
     expect(result.trusted).toBe(true)
     expect(result.reason).toBe('')
   })

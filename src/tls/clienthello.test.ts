@@ -126,8 +126,45 @@ describe('TLS 1.3 ClientHello encoding (RFC 8446 4.1.2, RFC 6066 3)', () => {
     expect(() => encodeClientHello('a.io', RANDOM, new Uint8Array(16), SESSION)).toThrow(/32 bytes/)
   })
 
-  it('the browser path produces a structurally valid message too', () => {
-    const hello = freshClientHello('github.com')
+  it('the browser path produces a structurally valid message with a REAL key share', async () => {
+    const hello = await freshClientHello('github.com')
     expect(readSniByWalking(hello.bytes).host).toBe('github.com')
+    // Under Node 22+ WebCrypto has X25519, so the share must be a genuine
+    // public key rather than random bytes. If this ever reports false here, the
+    // page's claim about the share has to change with it -- which is the point
+    // of reporting it rather than assuming.
+    expect(hello.keyShareIsReal).toBe(true)
+  })
+
+  it('the required extensions RFC 8446 9.2 names are all present', () => {
+    const hello = encodeClientHello('github.com', RANDOM, SHARE, SESSION)
+    const b = hello.bytes
+    // Walk the extension vector and collect the type codes, independently of
+    // the order the encoder writes them in.
+    let i = 5 + 4 + 2 + 32
+    i += b[i]! + 1
+    i += ((b[i]! << 8) | b[i + 1]!) + 2
+    i += b[i]! + 1
+    const total = (b[i]! << 8) | b[i + 1]!
+    i += 2
+    const end = i + total
+    const types: number[] = []
+    while (i < end) {
+      types.push((b[i]! << 8) | b[i + 1]!)
+      const len = (b[i + 2]! << 8) | b[i + 3]!
+      i += 4 + len
+    }
+    expect(i, 'the extension vector must end where its length said').toBe(end)
+    // server_name is RFC 6066; the other four are required of a client that
+    // expects the server to authenticate with a certificate.
+    for (const [code, name] of [
+      [0x0000, 'server_name'],
+      [0x002b, 'supported_versions'],
+      [0x000a, 'supported_groups'],
+      [0x000d, 'signature_algorithms'],
+      [0x0033, 'key_share'],
+    ] as const) {
+      expect(types, `missing ${name}`).toContain(code)
+    }
   })
 })

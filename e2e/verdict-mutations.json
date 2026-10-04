@@ -73,7 +73,7 @@
         "promise-vouched": {
           "test": "one flipped bit turns the vouching verdict red and names why",
           "claim": {
-            "contains": "Nobody your device trusts vouched for it",
+            "contains": "Nobody in the trusted list vouched for it",
             "result": "fail"
           }
         },
@@ -117,7 +117,7 @@
         "anchor-source": {
           "test": "the root is reported as coming from the device, not the server",
           "claim": {
-            "contains": "operating system vendor"
+            "contains": "operating system or browser vendor"
           }
         }
       },
@@ -189,7 +189,7 @@
       "replace": "    id: 'nonpromise-strength',\n    outcome: 'pass',",
       "kills": {
         "nonpromise-strength": {
-          "test": "the cipher list is reported as unauthenticated at that point",
+          "test": "the cipher list is unauthenticated NOW and checked later, both stated",
           "claim": {
             "contains": "nobody has authenticated yet",
             "result": "not-established"
@@ -206,7 +206,7 @@
         "promise-key": {
           "test": "the key check reports the curve the certificate actually carries",
           "claim": {
-            "contains": "There is a key to encrypt to",
+            "contains": "The certificate carries a usable key",
             "result": "pass"
           }
         }
@@ -241,7 +241,7 @@
         "sni-offset": {
           "test": "the hostname is readable in the bytes the page printed",
           "claim": {
-            "contains": "starts at byte 97 of 164"
+            "contains": "starts at byte 97 of 184"
           }
         }
       },
@@ -260,6 +260,21 @@
         }
       },
       "why": "4.1d requires that removing the negative-claim text fails assertion 3. Reversing it is the same test with a worse failure mode."
+    },
+    "all-checks-passed-ignores-expiry": {
+      "file": "src/pki/assess.ts",
+      "find": "  const everyPromisePassed = promises.every((p) => p.outcome === 'pass')",
+      "replace": "  const everyPromisePassed = [key, name, vouched].every((p) => p.outcome === 'pass')",
+      "kills": {
+        "nonpromise-honest": {
+          "test": "no passing-everything sentence survives: expired",
+          "claim": {
+            "contains": "whether the checks pass or fail",
+            "result": "not-established"
+          }
+        }
+      },
+      "why": "Re-introduces the exact bug this lab shipped and then fixed: the every-check-passed value ignoring the expiry check, so the page read NO PADLOCK at the top and 'Every check above passed' a few hundred pixels down. A page that contradicts itself teaches whichever half the reader read, and nothing caught it because the honesty row was only asserted in the state where every check really does pass."
     }
   }
 }

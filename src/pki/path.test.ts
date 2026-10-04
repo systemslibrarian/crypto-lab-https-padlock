@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { tamperSignature } from './break'
 import { CAPTURED_AT } from './clock'
-import { DEVICE_STORE, PEM, SCENARIOS } from './fixtures'
+import { LAB_TRUST_STORE, PEM, SCENARIOS } from './fixtures'
 import { parsePem } from './parse'
 import { makeStore, validatePath } from './path'
 
@@ -21,7 +21,7 @@ describe('the path validator rejects every bad chain', () => {
     const [leaf, , cross] = realChain()
     // Leaf straight to the cross-signed root: the server "forgot" the
     // intermediate. This is the single most common real misconfiguration.
-    const result = await validatePath([leaf!, cross!], DEVICE_STORE, CAPTURED_AT)
+    const result = await validatePath([leaf!, cross!], LAB_TRUST_STORE, CAPTURED_AT)
     expect(result.trusted).toBe(false)
     // The page must name the actual cause, not just fail.
     expect(result.reason).toContain('different names')
@@ -32,7 +32,7 @@ describe('the path validator rejects every bad chain', () => {
     const tampered = tamperSignature(PEM.ghLeaf)
     // It still parses -- that is deliberate, see break.ts.
     expect(tampered.subject).toBe(parsePem(PEM.ghLeaf).subject)
-    const result = await validatePath([tampered, mid!, cross!], DEVICE_STORE, CAPTURED_AT)
+    const result = await validatePath([tampered, mid!, cross!], LAB_TRUST_STORE, CAPTURED_AT)
     expect(result.trusted).toBe(false)
     expect(result.reason).toContain('does not check out')
   })
@@ -42,7 +42,7 @@ describe('the path validator rejects every bad chain', () => {
     // The real leaf expires 2026-11-29. One day later, nothing else is
     // different and the padlock is gone.
     const after = new Date('2026-11-30T12:00:00Z')
-    const result = await validatePath(chain, DEVICE_STORE, after)
+    const result = await validatePath(chain, LAB_TRUST_STORE, after)
     expect(result.trusted).toBe(false)
     expect(result.reason).toContain('expired')
     // Proof that only the date mattered: every signature still verifies.
@@ -51,7 +51,7 @@ describe('the path validator rejects every bad chain', () => {
 
   it('rejects a leaf that signed itself', async () => {
     const leaf = parsePem(PEM.toySelfSignedLeaf)
-    const result = await validatePath([leaf], DEVICE_STORE, CAPTURED_AT)
+    const result = await validatePath([leaf], LAB_TRUST_STORE, CAPTURED_AT)
     expect(result.trusted).toBe(false)
     expect(result.reason).toContain('signed itself')
   })
@@ -67,7 +67,7 @@ describe('the path validator rejects every bad chain', () => {
     expect(result.reason).toContain('nowhere left to go')
 
     // And it passes against the real store, so the only variable was trust.
-    const trusted = await validatePath(chain, DEVICE_STORE, CAPTURED_AT)
+    const trusted = await validatePath(chain, LAB_TRUST_STORE, CAPTURED_AT)
     expect(trusted.trusted).toBe(true)
   })
 
@@ -75,14 +75,14 @@ describe('the path validator rejects every bad chain', () => {
     // The attacker leaf put where its own CA should be: a perfectly real
     // signature from a certificate with CA:FALSE carries no authority.
     const leaf = parsePem(PEM.toyAttackerLeaf)
-    const result = await validatePath([leaf, leaf], DEVICE_STORE, CAPTURED_AT)
+    const result = await validatePath([leaf, leaf], LAB_TRUST_STORE, CAPTURED_AT)
     expect(result.trusted).toBe(false)
   })
 })
 
 describe('the walk reports where trust actually comes from', () => {
   it('the real chain walks to an anchor the server never sent', async () => {
-    const r = await validatePath(realChain(), DEVICE_STORE, CAPTURED_AT)
+    const r = await validatePath(realChain(), LAB_TRUST_STORE, CAPTURED_AT)
     // This is the whole of promise 3. github.com's served chain ends at a
     // CROSS-SIGNED copy of its root, whose own issuer -- USERTrust ECC -- is
     // not in the chain at all. The walk's last step is therefore a certificate
@@ -95,10 +95,15 @@ describe('the walk reports where trust actually comes from', () => {
     expect(r.trusted).toBe(true)
   })
 
-  it('ends at a step that came from the device, not from the server', async () => {
-    const result = await validatePath(realChain(), DEVICE_STORE, CAPTURED_AT)
+  it('ends at a step that came from the trust store, not from the server', async () => {
+    const result = await validatePath(realChain(), LAB_TRUST_STORE, CAPTURED_AT)
     const root = result.steps.find((s) => s.role === 'root')
     expect(root?.fromStore).toBe(true)
-    expect(result.anchorWhy).toContain('operating system vendor')
+    // The reason the root is trusted is a policy decision, not a cryptographic
+    // one, and the page has to say so in those terms.
+    expect(result.anchorWhy).toContain('operating system or browser vendor')
+    // And it must NOT claim anything about the reader's own machine: this lab
+    // ships a copy of that list and cannot see theirs.
+    expect(result.anchorWhy).not.toContain('your device')
   })
 })

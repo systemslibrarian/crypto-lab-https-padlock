@@ -64,7 +64,7 @@ test.describe('promise 1, the key', () => {
   test('the key check reports the curve the certificate actually carries', async ({ page }) => {
     await boot(page)
     await expectVerdict(page, 'promise-key', {
-      contains: 'There is a key to encrypt to',
+      contains: 'The certificate carries a usable key',
       result: 'pass',
     })
     // The claim is about a parsed field, so it is checked against the field:
@@ -76,9 +76,17 @@ test.describe('promise 1, the key', () => {
     // the parsed field beside it.
     expect(await evidence(page, '[data-verdict="promise-key"]', 'Loaded by your browser'))
       .toBe('yes')
-    // And the lab is honest that it did not observe encryption happening.
+    // And it is honest about what the key is FOR. In TLS 1.3 the certificate's
+    // key checks a handshake signature; it is not the key traffic is encrypted
+    // to -- that was RSA key transport, which TLS 1.3 removed. Saying "a key to
+    // encrypt to" taught a beginner something false while every test stayed
+    // green, so the correction is pinned here.
+    expect(await evidence(page, '[data-verdict="promise-key"]', 'What this key is for'))
+      .toBe("checking the server's handshake signature")
+    expect(await evidence(page, '[data-verdict="promise-key"]', 'Encrypts your traffic'))
+      .toContain('no')
     await expectVerdict(page, 'promise-key', {
-      contains: 'which this lab does not run',
+      contains: 'Neither step happens in this lab',
       result: 'pass',
     })
   })
@@ -164,7 +172,7 @@ test.describe('promise 3, vouching', () => {
     await boot(page)
     await page.locator('#tamper-btn').click()
     await expectVerdict(page, 'promise-vouched', {
-      contains: 'Nobody your device trusts vouched for it',
+      contains: 'Nobody in the trusted list vouched for it',
       result: 'fail',
     })
     await expectVerdict(page, 'link-0', {
@@ -175,12 +183,15 @@ test.describe('promise 3, vouching', () => {
 
   test('the root is reported as coming from the device, not the server', async ({ page }) => {
     await boot(page)
+    // NOT "your device": this lab ships its own copy of a trust list and can
+    // neither read nor change the reader's. The lesson survives the correction;
+    // the overclaim does not.
     expect(await evidence(page, '[data-verdict="promise-vouched"]', 'Root came from'))
-      .toBe('your device')
+      .toBe("this lab's trusted list")
     // The box the page drew for it agrees.
     await expect(page.locator('#chain .walk-step[data-from-store="true"]')).toHaveCount(1)
     await expectClaim(page, 'anchor-source', {
-      contains: 'operating system vendor',
+      contains: 'operating system or browser vendor',
     })
   })
 
@@ -315,14 +326,109 @@ test.describe('the other three non-promises are shown, not asserted', () => {
     await expectClaim(page, 'sni-readable', { contains: address })
   })
 
-  test('the cipher list is reported as unauthenticated at that point', async ({ page }) => {
+  test('the cipher list is unauthenticated NOW and checked later, both stated', async ({ page }) => {
     await boot(page)
     await expectVerdict(page, 'nonpromise-strength', {
       contains: 'nobody has authenticated yet',
       result: 'not-established',
     })
-    expect(await evidence(page, '[data-verdict="nonpromise-strength"]', 'Signed at this point'))
+    expect(await evidence(page, '[data-verdict="nonpromise-strength"]', 'Authenticated at this moment'))
       .toContain('no')
+    // The correction that matters: TLS 1.3 DOES check afterwards that the
+    // negotiation was not altered. Saying only "unauthenticated" taught a
+    // beginner that downgrades are free, which is false -- RFC 8446 signs the
+    // handshake transcript. The honest limitation is narrower: a padlock does
+    // not tell you WHICH option was chosen.
+    expect(await evidence(page, '[data-verdict="nonpromise-strength"]', 'Checked later in the handshake'))
+      .toContain('yes')
+    expect(await evidence(page, '[data-verdict="nonpromise-strength"]', 'Which one was chosen'))
+      .toContain('not shown')
+  })
+})
+
+test.describe('the page never contradicts itself', () => {
+  /**
+   * One value, used everywhere.
+   *
+   * This failed before it was fixed: with the checking date moved past expiry
+   * the headline read NO PADLOCK while the honesty card a few hundred pixels
+   * below still said "Every check above passed" and reported
+   * "All checks passed: yes". `checkHonest` was reading only the path and name
+   * results and ignoring expiry and the key.
+   *
+   * Nothing in the suite caught it, because the honesty row was only ever
+   * asserted in the attacker state -- where every check really does pass. A
+   * page that contradicts itself teaches whichever half the reader read, so
+   * this sweeps every breakage instead of sampling one.
+   */
+  const BREAKAGES = [
+    { name: 'expired', apply: async (page: Page) => page.locator('#date-input').fill('2026-11-30') },
+    { name: 'not yet valid', apply: async (page: Page) => page.locator('#date-input').fill('2026-01-15') },
+    { name: 'name mismatch', apply: async (page: Page) => page.locator('#address-input').fill('evil.example') },
+    { name: 'malformed address', apply: async (page: Page) => page.locator('#address-input').fill('not a host!') },
+    { name: 'signature tampered', apply: async (page: Page) => page.locator('#tamper-btn').click() },
+    { name: 'self-signed chain', apply: async (page: Page) => page.locator('#site-self-signed').check() },
+  ] as const
+
+  for (const breakage of BREAKAGES) {
+    test(`no passing-everything sentence survives: ${breakage.name}`, async ({ page }) => {
+      await boot(page)
+      await breakage.apply(page)
+
+      // At least one promise must now be failing, or the breakage did nothing
+      // and this test would pass by vacuity.
+      await expect(page.locator('#promises .check[data-result="fail"]').first()).toBeVisible()
+      const failing = await page.locator('#promises .check[data-result="fail"]').count()
+      expect(failing, `${breakage.name} must actually break something`).toBeGreaterThan(0)
+
+      // The padlock agrees.
+      await expect(page.locator('[data-verdict="padlock"]')).toHaveAttribute('data-result', 'fail')
+
+      // And NOTHING anywhere says everything passed.
+      expect(await evidence(page, '[data-verdict="nonpromise-honest"]', 'All checks passed'))
+        .toBe('no')
+      const honesty = await read(page, '[data-verdict="nonpromise-honest"]')
+      expect(honesty).not.toContain('Every check above passed')
+
+      // The honesty verdict itself is unchanged by any of this: it was never
+      // contingent on the checks passing, and must not become so. Asserted
+      // through expectVerdict so a mutation that re-introduces the
+      // every-check-passed bug has something named to kill.
+      await expectVerdict(page, 'nonpromise-honest', {
+        contains: 'whether the checks pass or fail',
+        result: 'not-established',
+      })
+    })
+  }
+
+  test('with nothing broken, the passing sentence IS shown', async ({ page }) => {
+    // The other side of the ratchet: a guard that only ever reports "no" would
+    // pass every test above while saying nothing true.
+    await boot(page)
+    await page.locator('#site-attacker-name').check()
+    expect(await evidence(page, '[data-verdict="nonpromise-honest"]', 'All checks passed'))
+      .toBe('yes')
+    await expectVerdict(page, 'nonpromise-honest', {
+      contains: 'Every check above passed',
+      result: 'not-established',
+    })
+  })
+})
+
+test.describe('what the reader types is treated as an address', () => {
+  test('a pasted URL matches, and only its host reaches the first message', async ({ page }) => {
+    await boot(page)
+    await page.locator('#address-input').fill('https://github.com/owner/repo?tab=readme')
+    // A browser extracts the host and matches THAT. Treating the whole URL as a
+    // hostname failed the name check and told the reader a browser would
+    // refuse -- wrong, and the opposite of the lesson.
+    await expect(page.locator('[data-verdict="promise-name"]')).toHaveAttribute('data-result', 'pass')
+    // And the URL must not end up in the SNI exhibit, which would be showing a
+    // first message no browser would ever send.
+    const sni = await read(page, '[data-claim="sni-readable"]')
+    expect(sni).toContain('github.com')
+    expect(sni).not.toContain('https://')
+    expect(sni).not.toContain('/owner/repo')
   })
 })
 

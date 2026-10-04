@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isPlainDnsName, matchesOne, matchName } from './hostname'
+import { hostFromInput, isPlainDnsName, matchesOne, matchName } from './hostname'
 
 describe('RFC 6125 name matching', () => {
   it('matches an exact name, case-insensitively and past a trailing dot', () => {
@@ -54,5 +54,33 @@ describe('RFC 6125 name matching', () => {
       expect(matchName(bad, ['github.com']).matched, bad).toBe(false)
     }
     expect(isPlainDnsName('a'.repeat(254))).toBe(false)
+  })
+})
+
+describe('what the reader actually types', () => {
+  it('extracts the host from a pasted URL, the way a browser does', () => {
+    for (const raw of [
+      'https://github.com/',
+      'http://github.com',
+      'https://github.com/owner/repo?tab=readme#top',
+      'https://github.com:443/',
+      'github.com/owner/repo',
+      '  HTTPS://GitHub.com/  ',
+      'https://user:pw@github.com/private',
+    ]) {
+      expect(hostFromInput(raw), raw).toBe('github.com')
+      expect(matchName(raw, ['github.com']).matched, raw).toBe(true)
+    }
+  })
+
+  it('still refuses anything that is not a plain DNS name after extraction', () => {
+    for (const raw of ['https://', 'https://[::1]/', 'https://a b.com/', '://x']) {
+      expect(matchName(raw, ['github.com']).matched, raw).toBe(false)
+    }
+  })
+
+  it('does not turn a different host into a match', () => {
+    expect(matchName('https://github.com.evil.example/', ['github.com']).matched).toBe(false)
+    expect(hostFromInput('https://evil.example/github.com')).toBe('evil.example')
   })
 })
