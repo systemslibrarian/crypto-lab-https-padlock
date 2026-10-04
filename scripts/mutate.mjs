@@ -51,6 +51,7 @@ import {
   existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync,
 } from 'node:fs'
 import { tmpdir } from 'node:os'
+import { connect as netConnect } from 'node:net'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -141,6 +142,42 @@ for (const id of ids) {
 if (invalid.length) {
   console.error('Refusing to run: these patches cannot make the round trip.\n')
   for (const line of invalid) console.error(`  ${line}`)
+  process.exit(2)
+}
+
+/* RULE 3's first precondition, checked before anything is built.
+ *
+ * CI=1 below forces playwright.config.ts's `reuseExistingServer: false`, which
+ * is deliberate -- a reused server could be an UNMUTATED checkout still
+ * listening from an earlier run, and a mutation "surviving" against that is a
+ * false survivor. But Playwright's own error for an occupied port reads
+ * "is already used, make sure that nothing is running on the port/url or set
+ * reuseExistingServer:true in config.webServer", which invites exactly the fix
+ * that breaks the guarantee. So the port is checked here and named as a
+ * precondition instead.
+ */
+const PORT = 4730
+const portFree = await new Promise((resolve) => {
+  const socket = netConnect({ host: '127.0.0.1', port: PORT })
+  const done = (free) => {
+    socket.destroy()
+    resolve(free)
+  }
+  socket.setTimeout(1500, () => done(true))
+  socket.once('connect', () => done(false))
+  socket.once('error', () => done(true))
+})
+if (!portFree) {
+  console.error(`Refusing to run: something is already listening on port ${PORT}.`)
+  console.error('')
+  console.error('This run forces CI=1 so Playwright starts its OWN preview server, because a')
+  console.error('reused one could be an unmutated checkout left over from an earlier run --')
+  console.error('and a mutation that "survives" against unmutated code is a false survivor.')
+  console.error('')
+  console.error(`Stop it and re-run:   lsof -ti:${PORT} | xargs kill`)
+  console.error('')
+  console.error('Do NOT set reuseExistingServer:true to get past this, which is what')
+  console.error("Playwright's own message for an occupied port suggests.")
   process.exit(2)
 }
 
