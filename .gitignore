@@ -1,0 +1,10 @@
+node_modules/
+dist/
+test-results/
+playwright-report/
+chat.md
+
+# The master standard is read from the catalog repo, not vendored here. A
+# committed copy ages silently into a second, wrong account of the standard --
+# the same reason chat.md is ignored. Keep it on disk, out of the repo.
+CRYPTO-LAB-TEMPLATE.md

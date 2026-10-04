@@ -1,0 +1,340 @@
+/* HTTPS Padlock — crypto-lab
+ *
+ * Dark is the only theme (master template 3.2). There is no light block and no
+ * toggle. Every colour below is a literal or a mix of literals, so the palette
+ * is what the a11y gate measures rather than what a media query might supply.
+ *
+ * --accent is DELIBERATELY NOT DEFINED HERE. It is assigned centrally, per lab,
+ * from the catalog. Everything that wants it reads `var(--accent, #35d6bb)` --
+ * the same fallback the shared top bar already uses -- so the page is complete
+ * and correct today and the central assignment is a one-line addition to :root
+ * rather than a sweep through this file.
+ */
+
+:root {
+  color-scheme: dark;
+
+  /* Surfaces, darkest to lightest. */
+  --bg: #0d1117;
+  --surface: #161b22;
+  --surface-2: #1c232c;
+  --surface-3: #222b36;
+
+  /* Borders. --border-strong is the one that carries meaning (control
+     boundaries, WCAG 1.4.11, needs 3:1 against its own backdrop); --border is
+     decorative separation only. */
+  --border: #2a333e;
+  --border-strong: #6e7d8d;
+
+  /* Text. Muted text lowers LIGHTNESS rather than using opacity, which is what
+     the gate's arithmetic walk can actually measure. */
+  --text: #e6edf3;
+  --text-dim: #aab6c3;
+  --text-muted: #94a2b1;
+
+  /* State inks. Light enough to clear 4.5:1 on every surface above; each is
+     always paired with an icon and a word, never used as the only signal. */
+  --pass-ink: #5fd97a;
+  --fail-ink: #ff8a80;
+  --alarm-ink: #ffb454;
+  --info-ink: #84c8ff;
+
+  /* State fills: a wash of the ink over the surface, so the ink stays readable. */
+  --pass-wash: color-mix(in srgb, #5fd97a 12%, var(--surface-2));
+  --fail-wash: color-mix(in srgb, #ff8a80 12%, var(--surface-2));
+  --alarm-wash: color-mix(in srgb, #ffb454 14%, var(--surface-2));
+  --info-wash: color-mix(in srgb, #84c8ff 10%, var(--surface-2));
+
+  --radius: 10px;
+  --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+
+/* The html element carries its own background-color LONGHAND. axe and WebKit
+   both miss the `background` shorthand here (master template 4.2). */
+html {
+  background-color: var(--bg);
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+/* Base element rules are scoped to #app, NOT global, so they cannot fight the
+   always-dark shared top bar (master template 4.2). */
+#app {
+  max-width: 68rem;
+  margin: 0 auto;
+  padding-inline: clamp(0.9rem, 3vw, 2rem);
+  padding-block: 0 clamp(1.5rem, 4vw, 3rem);
+}
+
+#app p { margin: 0 0 0.75rem; }
+#app p:last-child { margin-bottom: 0; }
+#app h2 { font-size: clamp(1.15rem, 2.4vw, 1.5rem); margin: 0 0 0.35rem; line-height: 1.25; }
+#app h3 { font-size: 1.02rem; margin: 0 0 0.3rem; line-height: 1.3; }
+#app code, #app kbd { font-family: var(--mono); font-size: 0.92em; }
+
+/* Inline links keep a persistent underline: colour alone is not a signal. */
+#app a { color: var(--info-ink); text-decoration: underline; text-underline-offset: 2px; }
+#app a:focus-visible, #app button:focus-visible, #app input:focus-visible,
+#app select:focus-visible, #app summary:focus-visible {
+  outline: 2px solid var(--accent, #35d6bb);
+  outline-offset: 2px;
+}
+
+/* ── Hero (master template 3.1, standard CSS mapped to this palette) ──────── */
+.cl-hero {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: clamp(1rem, 4vw, 3rem); flex-wrap: wrap;
+  margin: clamp(1rem, 3vw, 2rem) 0 1.5rem;
+}
+.cl-hero-main { flex: 1 1 22rem; min-width: min(100%, 20rem); }
+.cl-hero-title { margin: 0; font-size: clamp(1.6rem, 3.8vw, 2.7rem); font-weight: 700; line-height: 1.1; letter-spacing: 0.01em; }
+.cl-hero-sub { margin: 0.4rem 0 0; font-size: clamp(0.9rem, 1.6vw, 1.05rem); letter-spacing: 0.01em; color: var(--text-dim); }
+.cl-hero-desc { margin: 0.55rem 0 0; font-size: 1rem; line-height: 1.5; color: var(--text-dim); max-width: 60ch; }
+.cl-hero-why {
+  flex: 0 1 min(40%, 26rem); min-width: min(100%, 15rem);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 0.85rem 1.05rem;
+  background: color-mix(in oklab, var(--accent, #35d6bb) 6%, var(--surface));
+}
+.cl-hero-why-label { display: block; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.14em; color: var(--text-dim); }
+.cl-hero-why-text { margin: 0.35rem 0 0; font-size: 0.95rem; line-height: 1.5; }
+@media (max-width: 640px) {
+  .cl-hero { flex-direction: column; }
+  .cl-hero-why { flex-basis: auto; width: 100%; }
+}
+
+/* ── Cards ────────────────────────────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: clamp(0.9rem, 2.5vw, 1.4rem);
+  margin: 0 0 1.1rem;
+}
+.card > h2 + .lede { color: var(--text-dim); max-width: 70ch; }
+
+/* The plain-language on-ramp. Nothing numeric appears above it on the page. */
+.intro { background: color-mix(in oklab, var(--accent, #35d6bb) 5%, var(--surface)); }
+.intro .lede { font-size: 1.05rem; color: var(--text); max-width: 68ch; }
+
+/* ── Controls ─────────────────────────────────────────────────────────────── */
+.control-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); }
+.field { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; }
+.field > label, .field > .field-label { font-size: 0.82rem; font-weight: 700; letter-spacing: 0.04em; color: var(--text-dim); }
+.hint { font-size: 0.84rem; color: var(--text-muted); }
+
+input[type="text"], input[type="date"], select {
+  font: inherit; font-size: 0.95rem;
+  padding: 0.5rem 0.6rem; min-width: 0; width: 100%; box-sizing: border-box;
+  background: var(--surface-3); color: var(--text);
+  border: 1px solid var(--border-strong); border-radius: 8px;
+}
+/* A styled select needs appearance:none plus a drawn chevron (4.2). */
+select {
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--text-dim) 50%),
+                    linear-gradient(135deg, var(--text-dim) 50%, transparent 50%);
+  background-position: calc(100% - 1.1rem) 55%, calc(100% - 0.72rem) 55%;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  padding-right: 2rem;
+}
+input[aria-invalid="true"] { border-color: var(--fail-ink); }
+
+.btn {
+  font: inherit; font-size: 0.88rem; font-weight: 700;
+  padding: 0.5rem 0.9rem; cursor: pointer;
+  background: var(--surface-3); color: var(--text);
+  border: 1px solid var(--border-strong); border-radius: 8px;
+}
+.btn:hover { background: var(--surface-2); border-color: var(--text-dim); }
+.btn[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--accent, #35d6bb) 18%, var(--surface-3));
+  border-color: var(--accent, #35d6bb);
+}
+.btn-row { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+/* Site chooser: a real radio group, labelled, so the pressed state is not
+   conveyed by colour alone. */
+.site-list { display: grid; gap: 0.5rem; margin: 0; padding: 0; }
+.site-opt {
+  display: grid; grid-template-columns: auto 1fr; gap: 0.6rem; align-items: start;
+  padding: 0.6rem 0.75rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong); border-radius: 8px;
+  cursor: pointer;
+}
+.site-opt:hover { background: var(--surface-3); }
+.site-opt input { margin: 0.25rem 0 0; accent-color: var(--accent, #35d6bb); }
+.site-opt-name { font-family: var(--mono); font-size: 0.95rem; font-weight: 700; }
+.site-opt-note { font-size: 0.86rem; color: var(--text-dim); }
+.site-opt-tag {
+  display: inline-block; margin-left: 0.4rem; padding: 0 0.35rem;
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em;
+  border: 1px solid var(--border-strong); border-radius: 4px; color: var(--text-dim);
+}
+
+/* ── The padlock verdict ──────────────────────────────────────────────────── */
+.padlock {
+  display: flex; align-items: center; gap: clamp(0.75rem, 2.5vw, 1.25rem);
+  flex-wrap: wrap;
+  padding: clamp(0.9rem, 2.5vw, 1.25rem);
+  border: 2px solid var(--border-strong); border-radius: 12px;
+  background: var(--surface-2);
+}
+.padlock-glyph { font-size: clamp(1.8rem, 5vw, 2.6rem); line-height: 1; }
+.padlock-text { flex: 1 1 16rem; min-width: 0; }
+.padlock-headline { font-size: clamp(1.1rem, 3vw, 1.5rem); font-weight: 700; margin: 0; letter-spacing: 0.01em; }
+.padlock-detail { margin: 0.3rem 0 0; color: var(--text-dim); }
+
+.padlock[data-result="pass"] { border-color: var(--pass-ink); background: var(--pass-wash); }
+.padlock[data-result="pass"] .padlock-headline { color: var(--pass-ink); }
+.padlock[data-result="fail"] { border-color: var(--fail-ink); background: var(--fail-wash); }
+.padlock[data-result="fail"] .padlock-headline { color: var(--fail-ink); }
+/* ALARM: a correct result the reader is about to misread. It is NEVER green.
+   This is the lab's sharpest moment (brief, VISUAL SEMANTICS). */
+.padlock[data-result="alarm"] { border-color: var(--alarm-ink); background: var(--alarm-wash); }
+.padlock[data-result="alarm"] .padlock-headline { color: var(--alarm-ink); }
+
+/* ── Check rows: the four promises and the four non-promises ──────────────── */
+.checks { display: grid; gap: 0.6rem; margin: 0; padding: 0; }
+.check {
+  display: grid; grid-template-columns: auto 1fr; gap: 0.65rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--border-strong); border-left-width: 4px; border-radius: 8px;
+  background: var(--surface-2);
+}
+.check-icon { font-family: var(--mono); font-weight: 700; font-size: 1rem; line-height: 1.5; }
+.check-body { min-width: 0; }
+.check-head { display: flex; flex-wrap: wrap; gap: 0.4rem 0.6rem; align-items: baseline; }
+.check-title { font-weight: 700; }
+.check-state { font-family: var(--mono); font-size: 0.78rem; font-weight: 700; letter-spacing: 0.08em; }
+.check-detail { margin: 0.25rem 0 0; font-size: 0.92rem; color: var(--text-dim); }
+
+.check[data-result="pass"] { border-color: var(--pass-ink); background: var(--pass-wash); }
+.check[data-result="pass"] .check-icon, .check[data-result="pass"] .check-state { color: var(--pass-ink); }
+.check[data-result="fail"] { border-color: var(--fail-ink); background: var(--fail-wash); }
+.check[data-result="fail"] .check-icon, .check[data-result="fail"] .check-state { color: var(--fail-ink); }
+.check[data-result="not-established"] { border-color: var(--alarm-ink); background: var(--alarm-wash); }
+.check[data-result="not-established"] .check-icon,
+.check[data-result="not-established"] .check-state { color: var(--alarm-ink); }
+.check[data-result="out-of-scope"] { border-color: var(--border-strong); background: var(--surface-2); }
+.check[data-result="out-of-scope"] .check-icon,
+.check[data-result="out-of-scope"] .check-state { color: var(--text-dim); }
+
+/* Evidence: the value the check actually read. */
+.evidence { display: grid; gap: 0.2rem; margin: 0.45rem 0 0; padding: 0; font-size: 0.85rem; }
+.evidence-row { display: grid; grid-template-columns: minmax(7rem, auto) 1fr; gap: 0.5rem; }
+.evidence-label { color: var(--text-muted); }
+.evidence-value { font-family: var(--mono); overflow-wrap: anywhere; }
+
+/* ── The chain walk: boxes and arrows ─────────────────────────────────────── */
+.walk { display: grid; gap: 0.5rem; margin: 0.75rem 0 0; padding: 0; }
+.walk-step {
+  display: grid; grid-template-columns: auto 1fr; gap: 0.7rem; align-items: start;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface-2);
+}
+.walk-role {
+  font-family: var(--mono); font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em;
+  padding: 0.15rem 0.4rem; border: 1px solid var(--border-strong); border-radius: 4px;
+  color: var(--text-dim); white-space: nowrap;
+}
+.walk-name { font-family: var(--mono); font-size: 0.92rem; overflow-wrap: anywhere; }
+.walk-note { font-size: 0.85rem; color: var(--text-dim); margin: 0.2rem 0 0; }
+.walk-step[data-from-store="true"] { border-color: var(--info-ink); background: var(--info-wash); }
+.walk-step[data-from-store="true"] .walk-role { color: var(--info-ink); border-color: var(--info-ink); }
+
+/* The arrow between two boxes carries the link's verdict in icon + word +
+   colour, never colour alone. */
+.walk-link {
+  display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+  padding: 0.15rem 0.85rem 0.15rem 0.9rem;
+  font-size: 0.85rem;
+}
+.walk-link-arrow { font-family: var(--mono); font-weight: 700; }
+.walk-link[data-result="pass"] { color: var(--pass-ink); }
+.walk-link[data-result="fail"] { color: var(--fail-ink); }
+.walk-link-reason { color: var(--text-dim); flex: 1 1 100%; }
+
+/* ── Byte views ───────────────────────────────────────────────────────────── */
+details { border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface-2); margin: 0.6rem 0 0; }
+summary { padding: 0.55rem 0.8rem; cursor: pointer; font-weight: 700; font-size: 0.9rem; }
+summary:hover { background: var(--surface-3); }
+details > .details-body { padding: 0 0.8rem 0.8rem; }
+
+/* A scrolling region needs a keyboard route: tabindex + role + label, set in
+   the markup. These rules only make it look like one. */
+.bytes {
+  font-family: var(--mono); font-size: 0.8rem; line-height: 1.7;
+  overflow-x: auto; overflow-wrap: break-word;
+  padding: 0.6rem; border: 1px solid var(--border-strong); border-radius: 8px;
+  background: var(--bg); margin: 0.5rem 0 0;
+}
+.bytes-hl {
+  background: color-mix(in srgb, var(--alarm-ink) 30%, var(--bg));
+  color: var(--text); border-bottom: 2px solid var(--alarm-ink);
+  font-weight: 700; padding: 0 0.1rem;
+}
+.bytes-legend { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; font-size: 0.84rem; margin: 0.5rem 0 0; color: var(--text-dim); }
+
+/* ── Honest-scoping callout ───────────────────────────────────────────────── */
+.callout {
+  border: 1px solid var(--border-strong); border-left-width: 4px; border-radius: 8px;
+  padding: 0.7rem 0.9rem; margin: 0.75rem 0 0; background: var(--surface-2);
+}
+.callout-title { font-weight: 700; font-size: 0.86rem; letter-spacing: 0.05em; margin: 0 0 0.3rem; }
+.callout[data-tone="alarm"] { border-color: var(--alarm-ink); background: var(--alarm-wash); }
+.callout[data-tone="alarm"] .callout-title { color: var(--alarm-ink); }
+.callout[data-tone="info"] { border-color: var(--info-ink); background: var(--info-wash); }
+.callout[data-tone="info"] .callout-title { color: var(--info-ink); }
+
+.next-list { display: grid; gap: 0.6rem; margin: 0.6rem 0 0; padding: 0; }
+.next-item {
+  padding: 0.6rem 0.8rem; border: 1px solid var(--border-strong); border-radius: 8px;
+  background: var(--surface-2);
+}
+.next-item-why { font-size: 0.88rem; color: var(--text-dim); margin: 0.2rem 0 0; }
+
+/* ── Scripture footer (master template 3.3) ───────────────────────────────── */
+.scripture-footer {
+  margin-top: clamp(1.5rem, 4vw, 2.5rem); padding-top: 1.1rem;
+  border-top: 1px solid var(--border);
+  color: var(--text-dim); font-size: 0.88rem; text-align: center;
+}
+.scripture-footer p { margin: 0 0 0.5rem; }
+.footer-links { overflow-wrap: anywhere; }
+
+/* ── Motion ───────────────────────────────────────────────────────────────── */
+/* The only animation on the page: the check rows resolving when a site or a
+   date changes, which is the headline mechanism being shown rather than
+   asserted. It is tied to an action and never idles. The static end state is
+   opacity 1, so cancelling the animation below leaves content VISIBLE rather
+   than parked at 0 -- the failure mode the gate's expectNotBlank exists for. */
+@keyframes settle {
+  from { opacity: 0.35; transform: translateY(-2px); }
+  to { opacity: 1; transform: none; }
+}
+.check, .walk-step, .walk-link { animation: settle 0.22s ease-out; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* ── Narrow ───────────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .evidence-row { grid-template-columns: 1fr; gap: 0; }
+  .walk-step, .check { grid-template-columns: 1fr; }
+  .padlock { flex-direction: column; align-items: flex-start; }
+}

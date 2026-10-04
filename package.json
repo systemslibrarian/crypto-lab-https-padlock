@@ -1,0 +1,33 @@
+{
+  "name": "crypto-lab-https-padlock",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "npm run typecheck && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.e2e.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:a11y": "playwright test --project=a11y",
+    "test:claims": "playwright test --project=claims",
+    "test:verdicts": "playwright test --project=claims --project=coverage",
+    "mint:toy": "node scripts/mint-toy-pki.mjs",
+    "mutate": "node scripts/mutate.mjs",
+    "test:mutation": "node scripts/mutate.mjs run"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^26.6.3",
+    "typescript": "~5.8.3",
+    "vite": "^8.3.1",
+    "vitest": "^5.0.2"
+  },
+  "dependencies": {
+    "@peculiar/asn1-schema": "^2.10.0",
+    "@peculiar/asn1-x509": "^2.10.0",
+    "@peculiar/x509": "^1.14.0"
+  }
+}

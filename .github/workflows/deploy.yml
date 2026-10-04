@@ -1,0 +1,124 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  pull_request:          # the gate must judge PRs too
+    branches: [main]
+  workflow_dispatch:     # so an auto-merged bump can ask for its own deploy
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  # NOT a bare `pages`: with cancel-in-progress, a PR run would cancel a live
+  # main deploy.
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # The audited labs run 35-132s; 15 is generous and still bounded. GitHub's
+    # default is 360 minutes, which is where a hung job's six silent hours come
+    # from.
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # The whole suite, not just the a11y half. A 2026-08-14 sweep found 29
+      # repos whose deploy job ran test:a11y alone, so their unit and
+      # algorithmic suites never blocked a publish.
+      - name: Unit and known-answer tests
+        run: npm test
+
+      - name: Typecheck and build
+        run: npm run build
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      # Claims and the verdict-coverage rule. This step also runs
+      # e2e/global-teardown.ts, which fails the run when any kill recorded in
+      # e2e/verdict-mutations.json did not actually execute.
+      - name: Claims and verdict coverage
+        run: npm run test:verdicts
+
+      - name: Accessibility gate (axe-core, WCAG A/AA, 1280 / 390 / 320)
+        run: npm run test:a11y
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+      - name: Upload failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: test-results
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 7
+
+  deploy:
+    needs: build
+    # NOT `== 'push'`. That also skips workflow_dispatch, which is the one
+    # trigger the post-auto-merge deploy depends on: the dispatched run would
+    # build, pass the gate, and then skip this job, so the site would still
+    # never update.
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
+
+  dependabot-auto-merge:
+    needs: build            # every gate job -- this is what makes it safe
+    if: github.event_name == 'pull_request' && github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+      # actions: write is required for the deploy dispatch below. Without it
+      # `gh workflow run` returns HTTP 403 "Resource not accessible by
+      # integration", the merged bump never deploys, and a `|| echo` fallback
+      # hides it.
+      actions: write
+    steps:
+      - id: meta
+        uses: dependabot/fetch-metadata@v3
+      - name: Merge any bump whose gate went green
+        run: |
+          for attempt in 1 2 3; do
+            gh pr merge --squash --delete-branch "$PR_URL" && merged=1 && break
+            sleep 15          # a sibling PR merging first moves main under us
+          done
+          [ -n "$merged" ] || { echo "::warning::gate passed, merge did not land"; exit 0; }
+          # A merge made with GITHUB_TOKEN raises no push event -- GitHub suppresses
+          # them so workflows cannot retrigger themselves -- so deploy would never run
+          # and the site would keep serving the previous build. Ask for it explicitly;
+          # a workflow_dispatch through the API is not suppressed. The dispatched run
+          # is the same gate-then-deploy pipeline, so a bad merge still ships nothing.
+          #
+          # The dispatched file is deploy.yml, which is the name THIS repo uses --
+          # checked, not copied. A wrong filename 404s only on the auto-merge path and
+          # only after the merge has landed, so the lab looks healthy until a bump
+          # merges and the site quietly stops updating.
+          gh workflow run deploy.yml --repo "$GITHUB_REPOSITORY" --ref main
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
