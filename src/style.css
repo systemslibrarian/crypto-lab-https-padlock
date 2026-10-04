@@ -51,6 +51,24 @@
 
 /* The html element carries its own background-color LONGHAND. axe and WebKit
    both miss the `background` shorthand here (master template 4.2). */
+/* border-box everywhere.
+ *
+ * Without this the hero overflowed the viewport by exactly 36px at every width
+ * below 640px, and the gate caught it as a WCAG 1.4.10 reflow failure. The
+ * cause was `.cl-hero-why { width: 100% }` in the narrow media query: under
+ * content-box sizing its 16.8px side padding and 1px border sit OUTSIDE that
+ * 100%, so the flex line grew to 100% + 35.6px and `align-items: stretch`
+ * widened `.cl-hero-main` to match -- which is why the oracle named the title
+ * block rather than the aside that caused it. Every padded full-width element
+ * on the page has that shape, so the fix belongs here rather than on the one
+ * element that happened to show it.
+ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 html {
   background-color: var(--bg);
 }
