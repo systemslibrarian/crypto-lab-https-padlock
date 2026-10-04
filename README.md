@@ -2,8 +2,8 @@
 
 **X.509 · TLS 1.3 · what the padlock means**
 
-Parses the real certificate a site presents, walks the chain to a trusted root, and
-separates the four things the padlock proves from the four it does not.
+Parses the real certificate a site presents, walks the chain to a root that was trusted before
+you arrived, and separates the four things the padlock proves from the four it does not.
 
 **[Open the live demo](https://systemslibrarian.github.io/crypto-lab-https-padlock/)**
 
@@ -56,8 +56,9 @@ including the command each was captured with.
 2. **The padlock.** One verdict, computed from the four checks below. It reads `PADLOCK SHOWN`,
    `NO PADLOCK`, or — for the attacker certificate — `PADLOCK SHOWN — AND NOT WHO YOU THINK`.
 3. **The chain walk.** Leaf, intermediate, root, drawn as boxes with the verdict on each
-   signature between them. The last box is marked as the one that came from *your device* —
-   nobody sent it to you, and nothing in the chain vouches for it.
+   signature between them. The last box is marked as the one the **server never sent** — it
+   came from the trusted list, and nothing in the chain vouches for it. On a real device that
+   list ships with the operating system or browser; this lab carries its own copy.
 4. **The four promises.** A usable key — imported by WebCrypto, with what it is actually for
    spelled out; the name matches, under RFC 6125, after extracting the host from whatever you
    typed; somebody vouched; it has not expired. Each one shows the value it actually read.
@@ -177,21 +178,34 @@ arithmetically over every text node (including `aria-hidden` content axe skips),
 non-text contrast against a ratchet baseline, and checks reflow, which axe has no rule for.
 The deploy is blocked if it fails.
 
-**The claims suite** (`npm run test:verdicts`) checks the page tells the truth: 26 claims tests
-plus 4 coverage rules. The three biggest claims are **re-derived independently** in the test
-rather than recomputed the way the source computes them — RFC 6125 matching is implemented a
-second time in the spec, expiry is recomputed from the dates printed on screen, and the
-hostname's position in the `ClientHello` is found by searching the page's own printed bytes.
+**The claims suite** (`npm run test:verdicts`) checks the page tells the truth: **34 claims
+tests plus 4 coverage rules**. The three biggest claims are **re-derived independently** in the
+test rather than recomputed the way the source computes them — RFC 6125 matching is implemented
+a second time in the spec, expiry is recomputed from the dates printed on screen, and the
+hostname's position in the `ClientHello` is found by searching the page's own printed bytes
+(anchored on the name's length prefix, because at length 97 that prefix encodes as the letter
+`a` and a naive search lands one byte early).
 
-**Mutation discipline.** `npm run test:mutation` applies **14 recorded mutations** covering
-**17 marker assertions** — one per verdict the lab renders — in an isolated `git archive`
+It also sweeps for **self-contradiction**. The page shipped a real one: with the date past
+expiry the headline read `NO PADLOCK` while the honesty card still said "Every check above
+passed", because the every-check-passed value ignored expiry. Nothing caught it, since that row
+was only ever asserted in the state where every check really does pass. The suite now drives
+all six breakages and asserts no passing-everything sentence survives any of them — and the
+other side of the ratchet, that the sentence *is* shown when nothing is broken.
+
+**Mutation discipline.** `npm run test:mutation` applies **15 recorded mutations** covering
+**18 marker assertions** — one per verdict the lab renders, plus one that re-introduces the
+self-contradiction above so the fix is itself pinned — in an isolated `git archive`
 tree, and judges each against four rules: the owning test passed unmutated in the same run,
 the patch actually changed the file, the run served the mutated code (the bundle hash must
 move *and* the failure must not match a build error or a dead server), and a patch that does
 not compile is `DOES NOT BUILD` rather than a kill. The results in
 [`e2e/mutation-evidence.json`](e2e/mutation-evidence.json) are written by the runner, not by
 hand. Separately, `e2e/global-teardown.ts` fails the suite if any recorded kill never actually
-executed, so an unperformed record cannot sit in the registry looking performed.
+executed, so an unperformed record cannot sit in the registry looking performed — and when a
+copy edit legitimately moves a recorded claim, `npm run sync:kills` copies the new string out
+of a passing run's own sink instead of having someone retype what they believe the run did. It
+refuses to guess where the choice is a judgement.
 
 **The negative claim.** *A valid certificate does not establish who operates the name it was
 issued for.* Its evidence fixture is the attacker chain: a reachable state where every check
