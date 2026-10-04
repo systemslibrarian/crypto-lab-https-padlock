@@ -379,6 +379,21 @@ details > .details-body { padding: 0 0.8rem 0.8rem; }
 }
 .define::after { content: " ?"; font-size: 0.8em; font-weight: 700; }
 .define:hover { color: var(--text); }
+/* `[hidden]` must win over any `display` a class sets.
+ *
+ * This is the cascade trap the gate's probe exists to catch, and the page fell
+ * into it: `.define-panel { display: block }` outranks the user-agent
+ * `[hidden] { display: none }` rule by specificity, so a CLOSED definition
+ * panel went on painting while `aria-expanded="false"` said it was shut. The
+ * probe found it; nothing else would have, because the element looks hidden in
+ * the markup and the only evidence is what the cascade actually resolves to.
+ *
+ * Declared once, globally, rather than on the one element that showed it:
+ * every `hidden` toggle on the page has the same exposure. */
+[hidden] {
+  display: none !important;
+}
+
 .define-panel {
   display: block; margin: 0.35rem 0; padding: 0.55rem 0.7rem;
   border: 1px solid var(--info-ink); border-left-width: 4px; border-radius: 8px;
@@ -429,10 +444,10 @@ details > .details-body { padding: 0 0.8rem 0.8rem; }
 .option:hover { background: var(--surface-3); }
 .option input { margin: 0.3rem 0 0; accent-color: var(--accent, #35d6bb); }
 .option-why { display: block; margin: 0.3rem 0 0; font-size: 0.88rem; }
-.option[data-verdict="right"] { border-color: var(--pass-ink); background: var(--pass-wash); }
-.option[data-verdict="right"] .option-why { color: var(--pass-ink); }
-.option[data-verdict="wrong"] { border-color: var(--alarm-ink); background: var(--alarm-wash); }
-.option[data-verdict="wrong"] .option-why { color: var(--alarm-ink); }
+.option[data-choice="right"] { border-color: var(--pass-ink); background: var(--pass-wash); }
+.option[data-choice="right"] .option-why { color: var(--pass-ink); }
+.option[data-choice="wrong"] { border-color: var(--alarm-ink); background: var(--alarm-wash); }
+.option[data-choice="wrong"] .option-why { color: var(--alarm-ink); }
 
 /* ── Change summary and state badges ─────────────────────────────────────── */
 .changed {

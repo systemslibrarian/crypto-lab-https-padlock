@@ -492,10 +492,12 @@ test.describe('the page keeps its own copy honest', () => {
 
   test('nothing is hidden-but-painted, and no [hidden] cascade trap exists', async ({ page }) => {
     await boot(page)
-    // The 4.1 probe, adapted: this lab ships no [hidden] at all, so the trap
-    // to catch is a class rule setting `display` that outranks the UA [hidden]
-    // rule. Assert both halves rather than the absence alone.
-    await expect(page.locator('[hidden]')).toHaveCount(0)
+    // The 4.1 probe. The lab DOES use [hidden], legitimately: a closed
+    // definition panel is hidden that way, which is the correct semantics and
+    // what `aria-expanded` on its button is describing. So the rule is not
+    // "no [hidden]" -- it is that nothing hidden may still PAINT, which is the
+    // cascade trap: a class rule setting `display` outranks the UA [hidden]
+    // rule, so the element renders while the code believes it is hidden.
     const painted = await page.evaluate(() =>
       [...document.querySelectorAll('[hidden]')].filter((el) =>
         (el as HTMLElement).checkVisibility?.({ checkVisibilityCSS: true }),
@@ -520,7 +522,10 @@ test.describe('the page keeps its own copy honest', () => {
  */
 test.describe('the five-step lesson', () => {
   test('arrives on step 1 of 5 with the real chain and every check passing', async ({ page }) => {
-    await bootExplore(page)
+    // Plain boot, deliberately: that the GUIDED LESSON is the arrival state is
+    // the single most important structural fact about this page, and switching
+    // to explore mode here would assert the opposite of the point.
+    await boot(page)
     await expectClaim(page, 'step-progress', { text: 'Step 1 of 5.' })
     await expect(page.locator('#site-github-real')).toBeChecked()
     await expect(page.locator('#promises .summary-row[data-result="pass"]')).toHaveCount(4)

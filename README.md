@@ -49,19 +49,25 @@ including the command each was captured with.
 
 ## Exhibits
 
-1. **Pick a site, and set the date.** Three real certificate chains: the one `github.com`
-   actually served, a flawless certificate for a name that is not your bank, and a certificate
-   that signed itself. Plus the address you *think* you are visiting, and the date you are
-   checking.
+The **guided lesson is the default**: five steps, one question and one action each, with an
+optional prediction before the action and a known baseline reset at every step. Everything it
+does, it does by driving the same four controls **Explore freely** exposes — so nothing in the
+lesson is a simulation of the lab.
+
+1. **The five steps.** What the padlock checks · the name has to match · dates matter and
+   nothing else moves · somebody has to vouch · a perfect certificate for the wrong site. Each
+   ends in one sentence worth remembering.
 2. **The padlock.** One verdict, computed from the four checks below. It reads `PADLOCK SHOWN`,
    `NO PADLOCK`, or — for the attacker certificate — `PADLOCK SHOWN — AND NOT WHO YOU THINK`.
 3. **The chain walk.** Leaf, intermediate, root, drawn as boxes with the verdict on each
    signature between them. The last box is marked as the one the **server never sent** — it
    came from the trusted list, and nothing in the chain vouches for it. On a real device that
    list ships with the operating system or browser; this lab carries its own copy.
-4. **The four promises.** A usable key — imported by WebCrypto, with what it is actually for
-   spelled out; the name matches, under RFC 6125, after extracting the host from whatever you
-   typed; somebody vouched; it has not expired. Each one shows the value it actually read.
+4. **The four promises**, each leading with a plain state — `Key loads`, `Matches`,
+   `Signature verifies`, `In date` — and the explanation one click behind it. A usable key,
+   imported by WebCrypto with what it is actually for spelled out; the name matching under
+   RFC 6125 after the host is extracted from whatever you typed; somebody vouching; and not
+   expired. When one fails, the cause is shown **without** being asked for.
 5. **Break it yourself.** Type an address the certificate is not for. Move the date past the
    expiry. Flip one bit of the signature. Each failure is produced by the real validator, and
    the page names the actual cause.
@@ -70,9 +76,14 @@ including the command each was captured with.
    *demonstrated* rather than asserted.
 7. **The first message your browser sends.** A real TLS 1.3 `ClientHello`, in hex, with the
    hostname highlighted where it sits in the clear.
-8. **Show the bytes.** Progressive disclosure: the certificate's own fields as a table, and
-   what each part of the `ClientHello` is, both one click away and neither on screen until asked
-   for.
+8. **Look closer.** The chain walk, the `ClientHello` bytes and the RFC scope, one disclosure
+   each. An open one survives a recomputation, so reading the chain while editing the address
+   does not keep closing it.
+9. **What stuck.** Three questions about what you just did, after the last step. Each wrong
+   answer is explained at once and offers the experiment that settles it. Nothing is scored and
+   nothing is unlocked — a test asserts the page awards nothing for clicking through. Then the
+   practical takeaways, a note that browsers no longer all draw a padlock, and **one**
+   recommended next lab.
 
 ## When to Use It
 
@@ -171,14 +182,17 @@ npm run mint:toy     # re-mint the toy hierarchy (rotates its keys)
 | `src/tls/span.test.ts` | The declared position of the hostname against a byte search, at every length from 1 to 200 — including the n=97 case where the name's own length prefix encodes as the letter `a` and a naive search lands one byte early. |
 
 **The accessibility gate** (`npm run test:a11y`) scans the *production build* in Chromium for
-zero WCAG 2.1 A/AA violations, at **1280, 390 and 320 px**, across every state the lab
-teaches — including each failure, the alarm, both disclosures open, and three focus rings.
+zero WCAG 2.1 A/AA violations, at **1280, 390 and 320 px**, across every state the lab teaches
+— all five lesson steps, each failure, the alarm, the closing check answered both ways, every
+disclosure open, and four focus rings. It also asserts the interaction properties axe has no
+rule for: **focus stays on the control that was activated** through nine separate actions, an
+open disclosure **survives a recomputation**, and a definition **opens from the keyboard**.
 It is not an axe wrapper: it also asserts axe's `incomplete` bucket, computes contrast
 arithmetically over every text node (including `aria-hidden` content axe skips), measures
 non-text contrast against a ratchet baseline, and checks reflow, which axe has no rule for.
 The deploy is blocked if it fails.
 
-**The claims suite** (`npm run test:verdicts`) checks the page tells the truth: **34 claims
+**The claims suite** (`npm run test:verdicts`) checks the page tells the truth: **51 claims
 tests plus 4 coverage rules**. The three biggest claims are **re-derived independently** in the
 test rather than recomputed the way the source computes them — RFC 6125 matching is implemented
 a second time in the spec, expiry is recomputed from the dates printed on screen, and the
@@ -193,9 +207,11 @@ was only ever asserted in the state where every check really does pass. The suit
 all six breakages and asserts no passing-everything sentence survives any of them — and the
 other side of the ratchet, that the sentence *is* shown when nothing is broken.
 
-**Mutation discipline.** `npm run test:mutation` applies **15 recorded mutations** covering
-**18 marker assertions** — one per verdict the lab renders, plus one that re-introduces the
-self-contradiction above so the fix is itself pinned — in an isolated `git archive`
+**Mutation discipline.** `npm run test:mutation` applies **20 recorded mutations** covering
+**25 marker assertions** — one per verdict the lab renders, including the lesson's prediction
+scoring, the closing check's scoring, the step counter and the causal summary, plus one that
+re-introduces the self-contradiction above so the fix is itself pinned — in an isolated
+`git archive`
 tree, and judges each against four rules: the owning test passed unmutated in the same run,
 the patch actually changed the file, the run served the mutated code (the bundle hash must
 move *and* the failure must not match a build error or a dead server), and a patch that does

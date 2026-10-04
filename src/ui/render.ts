@@ -382,7 +382,7 @@ function predictionBlock(step: Step, chosen: string, onPredict: (id: string) => 
           el('label', {
             class: 'option',
             for: `predict-${step.id}-${o.id}`,
-            ...(o.id === chosen ? { 'data-verdict': o.correct ? 'right' : 'wrong' } : {}),
+            ...(o.id === chosen ? { 'data-choice': o.correct ? 'right' : 'wrong' } : {}),
           }, bits),
         ])
       }),
@@ -552,7 +552,7 @@ export function renderQuiz(host: Element, view: QuizView): void {
               el('label', {
                 class: 'option',
                 for: `quiz-${q.id}-${o.id}`,
-                ...(o.id === chosen ? { 'data-verdict': o.correct ? 'right' : 'wrong' } : {}),
+                ...(o.id === chosen ? { 'data-choice': o.correct ? 'right' : 'wrong' } : {}),
               }, [
                 input,
                 el('span', {}, [
