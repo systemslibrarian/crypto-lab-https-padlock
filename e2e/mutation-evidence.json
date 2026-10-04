@@ -1,0 +1,287 @@
+{
+  "comment": [
+    "WRITTEN BY scripts/mutate.mjs. Do not edit by hand.",
+    "",
+    "Every value here was measured by the run that produced it: the bundle hashes come",
+    "from hashing dist/assets, `compiled` from whether the build exited 0, and",
+    "`failingTests` from the reporter output. Nothing in this file is a person",
+    "describing what they saw.",
+    "",
+    "Regenerate with: npm run test:mutation",
+    "",
+    "This archive is a replayable record, not the check. The check is",
+    "e2e/global-teardown.ts, which fails the suite when a recorded kill never",
+    "executed, and e2e/verdict-coverage.spec.ts, which fails a rotted anchor or an",
+    "uncovered marker."
+  ],
+  "ranAt": "2026-10-04T23:16:13.444Z",
+  "headSha": "b51a37cefb73473a452197c6df0f05bbd84bf6dd",
+  "baselineSuite": {
+    "passed": true,
+    "tests": 38
+  },
+  "killed": 15,
+  "total": 15,
+  "markerAssertionsCovered": 18,
+  "results": [
+    {
+      "id": "name-match-inverted",
+      "verdict": "KILLED",
+      "markers": [
+        "promise-name"
+      ],
+      "observed": {
+        "baselineBundle": "3666163c5ebe",
+        "mutatedBundle": "b3d54a6d21fd",
+        "restoredBundle": "3666163c5ebe",
+        "bundleMoved": true,
+        "compiled": true,
+        "failingTests": [
+          "[claims] › e2e/claims.spec.ts:130:3 › promise 2, the name check, re-derived independently › a failing name check names the actual cause"
+        ]
+      }
+    },
+    {
+      "id": "validity-window-inverted",
+      "verdict": "KILLED",
+      "markers": [
+        "promise-time"
+      ],
+      "observed": {
+        "baselineBundle": "3666163c5ebe",
+        "mutatedBundle": "4ecf028e45a1",
+        "restoredBundle": "3666163c5ebe",
+        "bundleMoved": true,
+        "compiled": true,
+        "failingTests": [
+          "[claims] › e2e/claims.spec.ts:158:3 › promise 4, expiry, re-derived from the dates on screen › an expired certificate says so, with the signatures still good"
+        ]
+      }
+    },
+    {
+      "id": "signature-verify-inverted",
+      "verdict": "KILLED",
+      "markers": [
+        "promise-vouched",
+        "link-0",
+        "padlock"
+      ],
+      "observed": {
+        "baselineBundle": "3666163c5ebe",
+        "mutatedBundle": "b4e8292cbcfd",
+        "restoredBundle": "3666163c5ebe",
+        "bundleMoved": true,
+        "compiled": true,
+        "failingTests": [
+          "[claims] › e2e/claims.spec.ts:171:3 › promise 3, vouching › one flipped bit turns the vouching verdict red and names why",
+          "[claims] › e2e/claims.spec.ts:226:3 › the negative claim: a valid certificate does not establish the operator › 2. every verdict the page renders in that state reports success"
+        ]
+      }
+    },
+    {
+      "id": "self-signed-accepted",
+      "verdict": "KILLED",
+      "markers": [
+        "promise-vouched"
+      ],
+      "observed": {
+        "baselineBundle": "3666163c5ebe",
+        "mutatedBundle": "dc32dd07eacf",
+        "restoredBundle": "3666163c5ebe",
+        "bundleMoved": true,
+        "compiled": true,
+        "failingTests": [
+          "[claims] › e2e/claims.spec.ts:198:3 › promise 3, vouching › a self-signed leaf is rejected and the page says it signed itself"
+        ]
+      }
+    },
+    {
+      "id": "anchor-provenance-hidden",
+      "verdict": "KILLED",
+      "markers": [
+        "anchor-source"
+      ],
+      "observed": {
+        "baselineBundle": "3666163c5ebe",
+        "mutatedBundle": "f900d2e078b8",
+        "restoredBundle": "3666163c5ebe",
+        "bundleMoved": true,
+        "compiled": true,
+        "failingTests": [
+          "[claims] › e2e/claims.spec.ts:184:3 › promise 3, vouching › the root is reported as coming from the device, not the server"
+        ]
+      }
+    },
+    {
+      "id": "alarm-reads-as-success",
+      "verdict": "KILLED",
+      "markers": [
+        "padlock"
+      ],
+      "observed": {
+        "baselineBundle": "3666163c5ebe",
+        "mutatedBundle": "be90c811e5a5",
+        "restoredBundle": "3666163c5ebe",
+        "bundleMoved": true,
+        "compiled": true,
+        "failingTests": [
+          "[claims] › e2e/claims.spec.ts:226:3 › the negative claim: a valid certificate does not establish the operator › 2. every verdict the page renders in that state reports success"
+        ]
+      }
+    },
+    {
+      "id": "operator-identity-established",
+      "verdict": "KILLED",
+      "markers": [
+        "nonpromise-operator"
+      ],
+      "observed": {
+        "baselineBundle": "3666163c5ebe",
+        "mutatedBundle": "224b952b9806",
+        "restoredBundle": "3666163c5ebe",
+        "bundleMoved": true,
+        "compiled": true,
+        "failingTests": [
+          "[claims] › e2e/claims.spec.ts:247:3 › the negative claim: a valid certificate does not establish the operator › 3. the limitation is on screen in that state, as the lab's own check"
+        ]
+      }
+    },
+    {
+      "id": "honesty-established",
+      "verdict": "KILLED",
+      "markers": [
+        "nonpromise-honest"
+      ],
+      "observed": {
+        "baselineBundle": "3666163c5ebe",
+        "mutatedBundle": "ead1b58770a7",
+        "restoredBundle": "3666163c5ebe",
+        "bundleMoved": true,
+        "compiled": true,
+        "failingTests": [
+          "[claims] › e2e/claims.spec.ts:283:3 › the other three non-promises are shown, not asserted › honesty is not established, and says so with every check passing"
+        ]
+      }
+    },
+    {
+      "id": "sni-privacy-claimed",
+      "verdict": "KILLED",
+      "markers": [
+        "nonpromise-sni"
+      ],
+      "observed": {
+        "baselineBundle": "3666163c5ebe",
+        "mutatedBundle": "a643147333f8",
+        "restoredBundle": "3666163c5ebe",
+        "bundleMoved": true,
+        "compiled": true,
+        "failingTests": [
+          "[claims] › e2e/claims.spec.ts:293:3 › the other three non-promises are shown, not asserted › the hostname is readable in the bytes the page printed"
+        ]
+      }
+    },
+    {
+      "id": "cipher-strength-guaranteed",
+      "verdict": "KILLED",
+      "markers": [
+        "nonpromise-strength"
+      ],
+      "observed": {
+        "baselineBundle": "3666163c5ebe",
+        "mutatedBundle": "6d321e9868d5",
+        "restoredBundle": "3666163c5ebe",
+        "bundleMoved": true,
+        "compiled": true,
+        "failingTests": [
+          "[claims] › e2e/claims.spec.ts:329:3 › the other three non-promises are shown, not asserted › the cipher list is unauthenticated NOW and checked later, both stated"
+        ]
+      }
+    },
+    {
+      "id": "key-check-failed",
+      "verdict": "KILLED",
+      "markers": [
+        "promise-key"
+      ],
+      "observed": {
+        "baselineBundle": "3666163c5ebe",
+        "mutatedBundle": "3948d41d2f91",
+        "restoredBundle": "3666163c5ebe",
+        "bundleMoved": true,
+        "compiled": true,
+        "failingTests": [
+          "[claims] › e2e/claims.spec.ts:64:3 › promise 1, the key › the key check reports the curve the certificate actually carries"
+        ]
+      }
+    },
+    {
+      "id": "chain-length-off-by-one",
+      "verdict": "KILLED",
+      "markers": [
+        "chain-length"
+      ],
+      "observed": {
+        "baselineBundle": "3666163c5ebe",
+        "mutatedBundle": "ca33fda52f86",
+        "restoredBundle": "3666163c5ebe",
+        "bundleMoved": true,
+        "compiled": true,
+        "failingTests": [
+          "[claims] › e2e/claims.spec.ts:43:3 › the headline verdict › the chain-length claim equals the boxes the page actually drew"
+        ]
+      }
+    },
+    {
+      "id": "sni-offset-moved",
+      "verdict": "KILLED",
+      "markers": [
+        "sni-readable",
+        "sni-offset"
+      ],
+      "observed": {
+        "baselineBundle": "3666163c5ebe",
+        "mutatedBundle": "60519938ff99",
+        "restoredBundle": "3666163c5ebe",
+        "bundleMoved": true,
+        "compiled": true,
+        "failingTests": [
+          "[claims] › e2e/claims.spec.ts:293:3 › the other three non-promises are shown, not asserted › the hostname is readable in the bytes the page printed"
+        ]
+      }
+    },
+    {
+      "id": "negative-claim-weakened",
+      "verdict": "KILLED",
+      "markers": [
+        "negative-claim"
+      ],
+      "observed": {
+        "baselineBundle": "3666163c5ebe",
+        "mutatedBundle": "d7f9dfedbbfa",
+        "restoredBundle": "3666163c5ebe",
+        "bundleMoved": true,
+        "compiled": true,
+        "failingTests": [
+          "[claims] › e2e/claims.spec.ts:247:3 › the negative claim: a valid certificate does not establish the operator › 3. the limitation is on screen in that state, as the lab's own check"
+        ]
+      }
+    },
+    {
+      "id": "all-checks-passed-ignores-expiry",
+      "verdict": "KILLED",
+      "markers": [
+        "nonpromise-honest"
+      ],
+      "observed": {
+        "baselineBundle": "3666163c5ebe",
+        "mutatedBundle": "3b44c2803278",
+        "restoredBundle": "3666163c5ebe",
+        "bundleMoved": true,
+        "compiled": true,
+        "failingTests": [
+          "[claims] › e2e/claims.spec.ts:374:5 › the page never contradicts itself › no passing-everything sentence survives: expired"
+        ]
+      }
+    }
+  ]
+}
