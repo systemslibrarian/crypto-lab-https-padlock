@@ -918,8 +918,19 @@ export async function driveAllStates(page: Page, label: string): Promise<void> {
     await scanAt(`#${id} focused`);
   }
 
-  // ── Back to the arrival state through the page's own control ───────────
+  // ── Back into the lesson through the page's own control ────────────────
+  // Returning restores the STEP the reader was on, not step 1 -- the drive
+  // walked to step 5, so the baseline reapplied is the lookalike's. Asserting
+  // github-real here would have demanded the lesson forget where they were.
   await clickKeepingFocus(page, 'mode-lesson', 'switching back to the lesson');
+  await expect(page.locator('#site-attacker-name')).toBeChecked();
+  await expect(page.locator('[data-claim="step-progress"]')).toHaveText('Step 5 of 5.');
+  await expect(page.locator('[data-verdict="padlock"]')).toHaveAttribute('data-result', 'alarm');
+  await scanAt('back in the lesson, on the step the reader left');
+
+  // And the lesson can be restarted from the top, which is the arrival state.
+  await page.locator('#start-lesson').click();
+  await expect(page.locator('[data-claim="step-progress"]')).toHaveText('Step 1 of 5.');
   await expect(page.locator('#site-github-real')).toBeChecked();
-  await scanAt('back in the lesson, at the state a reader arrives in');
+  await scanAt('restarted: the state a reader actually arrives in');
 }
