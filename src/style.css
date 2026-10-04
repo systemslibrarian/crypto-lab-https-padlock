@@ -360,7 +360,6 @@ details > .details-body { padding: 0 0.8rem 0.8rem; }
      columns of real words do not fit, and the gate measured exactly that. */
   .summary-row { grid-template-columns: auto 1fr; }
   .summary-state { grid-column: 2; }
-  .summary-row > details { grid-column: 1 / -1; }
   .option { grid-template-columns: auto 1fr; }
 }
 
@@ -368,6 +367,19 @@ details > .details-body { padding: 0 0.8rem 0.8rem; }
    needs; without this a long certificate name sets a min-content floor that
    the grid then honours past the viewport edge. */
 .summary-name, .summary-state, .summary-cause { min-width: 0; overflow-wrap: anywhere; }
+
+/* Every list on this page is a card stack, never a bulleted list.
+ *
+ * `list-style: none` is exactly the declaration that makes Safari and VoiceOver
+ * drop a list's implicit role, which is why `src/ui/dom.ts`'s `list()` helper
+ * states `role="list"` and stamps `role="listitem"` on every child. The roles
+ * are the reason this is safe to do, not an afterthought to it.
+ */
+#app :is(.checks, .site-list, .walk, .evidence, .next-list, .options, .progress, .badges) {
+  list-style: none;
+  padding-left: 0;
+  margin-left: 0;
+}
 
 /* ── Inline definitions (a button, not a hover tooltip) ───────────────────── */
 .define-wrap { display: inline; }
@@ -473,6 +485,10 @@ details > .details-body { padding: 0 0.8rem 0.8rem; }
 .summary-name { font-weight: 700; }
 .summary-state { font-family: var(--mono); font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; }
 .summary-cause { grid-column: 1 / -1; font-size: 0.9rem; color: var(--text-dim); margin: 0.2rem 0 0; }
+/* The row's disclosure spans the whole row: left in the icon column it sat
+   under the glyph with the rest of the row empty beside it. */
+.summary-row > details { grid-column: 1 / -1; margin-top: 0.5rem; }
+.summary-row > details > summary { padding: 0.4rem 0.6rem; font-size: 0.85rem; }
 .summary-row[data-result="pass"] { border-color: var(--pass-ink); background: var(--pass-wash); }
 .summary-row[data-result="pass"] .summary-state { color: var(--pass-ink); }
 .summary-row[data-result="fail"] { border-color: var(--fail-ink); background: var(--fail-wash); }
