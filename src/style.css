@@ -4,14 +4,15 @@
  * toggle. Every colour below is a literal or a mix of literals, so the palette
  * is what the a11y gate measures rather than what a media query might supply.
  *
- * --accent is DELIBERATELY NOT DEFINED HERE. It is assigned centrally, per lab,
- * from the catalog. Everything that wants it reads `var(--accent, #35d6bb)` --
- * the same fallback the shared top bar already uses -- so the page is complete
- * and correct today and the central assignment is a one-line addition to :root
- * rather than a sweep through this file.
+ * --accent is a CENTRAL ASSIGNMENT from the catalog, and this file was built so
+ * that applying it is one line: everything that wants it reads
+ * `var(--accent, #35d6bb)`, the same fallback the shared top bar uses.
+ * Assigned 2026-10-04, chosen so this card differs from its neighbours at four,
+ * two and one columns.
  */
 
 :root {
+  --accent: #9f88ff;
   color-scheme: dark;
 
   /* Surfaces, darkest to lightest. */
