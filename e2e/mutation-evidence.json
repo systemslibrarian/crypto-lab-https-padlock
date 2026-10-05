@@ -14,15 +14,15 @@
     "executed, and e2e/verdict-coverage.spec.ts, which fails a rotted anchor or an",
     "uncovered marker."
   ],
-  "ranAt": "2026-10-04T23:16:13.444Z",
-  "headSha": "b51a37cefb73473a452197c6df0f05bbd84bf6dd",
+  "ranAt": "2026-10-04T23:59:35.881Z",
+  "headSha": "8585e99e8c2b4ae37211c509599ca90751e5ac62",
   "baselineSuite": {
     "passed": true,
-    "tests": 38
+    "tests": 57
   },
-  "killed": 15,
-  "total": 15,
-  "markerAssertionsCovered": 18,
+  "killed": 11,
+  "total": 20,
+  "markerAssertionsCovered": 25,
   "results": [
     {
       "id": "name-match-inverted",
@@ -31,13 +31,13 @@
         "promise-name"
       ],
       "observed": {
-        "baselineBundle": "3666163c5ebe",
-        "mutatedBundle": "b3d54a6d21fd",
-        "restoredBundle": "3666163c5ebe",
+        "baselineBundle": "3cec67e33638",
+        "mutatedBundle": "64f459e32aee",
+        "restoredBundle": "3cec67e33638",
         "bundleMoved": true,
         "compiled": true,
         "failingTests": [
-          "[claims] › e2e/claims.spec.ts:130:3 › promise 2, the name check, re-derived independently › a failing name check names the actual cause"
+          "[claims] › e2e/claims.spec.ts:145:3 › promise 2, the name check, re-derived independently › a failing name check names the actual cause"
         ]
       }
     },
@@ -48,13 +48,13 @@
         "promise-time"
       ],
       "observed": {
-        "baselineBundle": "3666163c5ebe",
-        "mutatedBundle": "4ecf028e45a1",
-        "restoredBundle": "3666163c5ebe",
+        "baselineBundle": "3cec67e33638",
+        "mutatedBundle": "8e82b8e722a6",
+        "restoredBundle": "3cec67e33638",
         "bundleMoved": true,
         "compiled": true,
         "failingTests": [
-          "[claims] › e2e/claims.spec.ts:158:3 › promise 4, expiry, re-derived from the dates on screen › an expired certificate says so, with the signatures still good"
+          "[claims] › e2e/claims.spec.ts:173:3 › promise 4, expiry, re-derived from the dates on screen › an expired certificate says so, with the signatures still good"
         ]
       }
     },
@@ -67,14 +67,14 @@
         "padlock"
       ],
       "observed": {
-        "baselineBundle": "3666163c5ebe",
-        "mutatedBundle": "b4e8292cbcfd",
-        "restoredBundle": "3666163c5ebe",
+        "baselineBundle": "3cec67e33638",
+        "mutatedBundle": "d2c5ccabbb9e",
+        "restoredBundle": "3cec67e33638",
         "bundleMoved": true,
         "compiled": true,
         "failingTests": [
-          "[claims] › e2e/claims.spec.ts:171:3 › promise 3, vouching › one flipped bit turns the vouching verdict red and names why",
-          "[claims] › e2e/claims.spec.ts:226:3 › the negative claim: a valid certificate does not establish the operator › 2. every verdict the page renders in that state reports success"
+          "[claims] › e2e/claims.spec.ts:186:3 › promise 3, vouching › one flipped bit turns the vouching verdict red and names why",
+          "[claims] › e2e/claims.spec.ts:241:3 › the negative claim: a valid certificate does not establish the operator › 2. every verdict the page renders in that state reports success"
         ]
       }
     },
@@ -85,13 +85,13 @@
         "promise-vouched"
       ],
       "observed": {
-        "baselineBundle": "3666163c5ebe",
-        "mutatedBundle": "dc32dd07eacf",
-        "restoredBundle": "3666163c5ebe",
+        "baselineBundle": "3cec67e33638",
+        "mutatedBundle": "ca54845b5e4c",
+        "restoredBundle": "3cec67e33638",
         "bundleMoved": true,
         "compiled": true,
         "failingTests": [
-          "[claims] › e2e/claims.spec.ts:198:3 › promise 3, vouching › a self-signed leaf is rejected and the page says it signed itself"
+          "[claims] › e2e/claims.spec.ts:213:3 › promise 3, vouching › a self-signed leaf is rejected and the page says it signed itself"
         ]
       }
     },
@@ -102,13 +102,13 @@
         "anchor-source"
       ],
       "observed": {
-        "baselineBundle": "3666163c5ebe",
-        "mutatedBundle": "f900d2e078b8",
-        "restoredBundle": "3666163c5ebe",
+        "baselineBundle": "3cec67e33638",
+        "mutatedBundle": "7fd3810861fa",
+        "restoredBundle": "3cec67e33638",
         "bundleMoved": true,
         "compiled": true,
         "failingTests": [
-          "[claims] › e2e/claims.spec.ts:184:3 › promise 3, vouching › the root is reported as coming from the device, not the server"
+          "[claims] › e2e/claims.spec.ts:199:3 › promise 3, vouching › the root is reported as coming from the device, not the server"
         ]
       }
     },
@@ -119,13 +119,13 @@
         "padlock"
       ],
       "observed": {
-        "baselineBundle": "3666163c5ebe",
-        "mutatedBundle": "be90c811e5a5",
-        "restoredBundle": "3666163c5ebe",
+        "baselineBundle": "3cec67e33638",
+        "mutatedBundle": "6ece3e274dd4",
+        "restoredBundle": "3cec67e33638",
         "bundleMoved": true,
         "compiled": true,
         "failingTests": [
-          "[claims] › e2e/claims.spec.ts:226:3 › the negative claim: a valid certificate does not establish the operator › 2. every verdict the page renders in that state reports success"
+          "[claims] › e2e/claims.spec.ts:241:3 › the negative claim: a valid certificate does not establish the operator › 2. every verdict the page renders in that state reports success"
         ]
       }
     },
@@ -136,13 +136,13 @@
         "nonpromise-operator"
       ],
       "observed": {
-        "baselineBundle": "3666163c5ebe",
-        "mutatedBundle": "224b952b9806",
-        "restoredBundle": "3666163c5ebe",
+        "baselineBundle": "3cec67e33638",
+        "mutatedBundle": "76e159c9242e",
+        "restoredBundle": "3cec67e33638",
         "bundleMoved": true,
         "compiled": true,
         "failingTests": [
-          "[claims] › e2e/claims.spec.ts:247:3 › the negative claim: a valid certificate does not establish the operator › 3. the limitation is on screen in that state, as the lab's own check"
+          "[claims] › e2e/claims.spec.ts:262:3 › the negative claim: a valid certificate does not establish the operator › 3. the limitation is on screen in that state, as the lab's own check"
         ]
       }
     },
@@ -153,13 +153,13 @@
         "nonpromise-honest"
       ],
       "observed": {
-        "baselineBundle": "3666163c5ebe",
-        "mutatedBundle": "ead1b58770a7",
-        "restoredBundle": "3666163c5ebe",
+        "baselineBundle": "3cec67e33638",
+        "mutatedBundle": "845fab85bfd2",
+        "restoredBundle": "3cec67e33638",
         "bundleMoved": true,
         "compiled": true,
         "failingTests": [
-          "[claims] › e2e/claims.spec.ts:283:3 › the other three non-promises are shown, not asserted › honesty is not established, and says so with every check passing"
+          "[claims] › e2e/claims.spec.ts:298:3 › the other three non-promises are shown, not asserted › honesty is not established, and says so with every check passing"
         ]
       }
     },
@@ -170,100 +170,90 @@
         "nonpromise-sni"
       ],
       "observed": {
-        "baselineBundle": "3666163c5ebe",
-        "mutatedBundle": "a643147333f8",
-        "restoredBundle": "3666163c5ebe",
+        "baselineBundle": "3cec67e33638",
+        "mutatedBundle": "d90bb7f42998",
+        "restoredBundle": "3cec67e33638",
         "bundleMoved": true,
         "compiled": true,
         "failingTests": [
-          "[claims] › e2e/claims.spec.ts:293:3 › the other three non-promises are shown, not asserted › the hostname is readable in the bytes the page printed"
+          "[claims] › e2e/claims.spec.ts:308:3 › the other three non-promises are shown, not asserted › the hostname is readable in the bytes the page printed"
         ]
       }
     },
     {
       "id": "cipher-strength-guaranteed",
-      "verdict": "KILLED",
+      "verdict": "SURVIVED (nonpromise-strength)",
       "markers": [
         "nonpromise-strength"
       ],
       "observed": {
-        "baselineBundle": "3666163c5ebe",
-        "mutatedBundle": "6d321e9868d5",
-        "restoredBundle": "3666163c5ebe",
+        "baselineBundle": "3cec67e33638",
+        "mutatedBundle": "80afc9470a68",
+        "restoredBundle": "3cec67e33638",
         "bundleMoved": true,
         "compiled": true,
-        "failingTests": [
-          "[claims] › e2e/claims.spec.ts:329:3 › the other three non-promises are shown, not asserted › the cipher list is unauthenticated NOW and checked later, both stated"
-        ]
+        "failingTests": []
       }
     },
     {
       "id": "key-check-failed",
-      "verdict": "KILLED",
+      "verdict": "SURVIVED (promise-key)",
       "markers": [
         "promise-key"
       ],
       "observed": {
-        "baselineBundle": "3666163c5ebe",
-        "mutatedBundle": "3948d41d2f91",
-        "restoredBundle": "3666163c5ebe",
+        "baselineBundle": "3cec67e33638",
+        "mutatedBundle": "f06d088d1f60",
+        "restoredBundle": "3cec67e33638",
         "bundleMoved": true,
         "compiled": true,
-        "failingTests": [
-          "[claims] › e2e/claims.spec.ts:64:3 › promise 1, the key › the key check reports the curve the certificate actually carries"
-        ]
+        "failingTests": []
       }
     },
     {
       "id": "chain-length-off-by-one",
-      "verdict": "KILLED",
+      "verdict": "SURVIVED (chain-length)",
       "markers": [
         "chain-length"
       ],
       "observed": {
-        "baselineBundle": "3666163c5ebe",
-        "mutatedBundle": "ca33fda52f86",
-        "restoredBundle": "3666163c5ebe",
+        "baselineBundle": "3cec67e33638",
+        "mutatedBundle": "155263d4663c",
+        "restoredBundle": "3cec67e33638",
         "bundleMoved": true,
         "compiled": true,
-        "failingTests": [
-          "[claims] › e2e/claims.spec.ts:43:3 › the headline verdict › the chain-length claim equals the boxes the page actually drew"
-        ]
+        "failingTests": []
       }
     },
     {
       "id": "sni-offset-moved",
-      "verdict": "KILLED",
+      "verdict": "SURVIVED (sni-readable, sni-offset)",
       "markers": [
         "sni-readable",
         "sni-offset"
       ],
       "observed": {
-        "baselineBundle": "3666163c5ebe",
-        "mutatedBundle": "60519938ff99",
-        "restoredBundle": "3666163c5ebe",
+        "baselineBundle": "3cec67e33638",
+        "mutatedBundle": "c6c9476f8fbb",
+        "restoredBundle": "3cec67e33638",
         "bundleMoved": true,
         "compiled": true,
-        "failingTests": [
-          "[claims] › e2e/claims.spec.ts:293:3 › the other three non-promises are shown, not asserted › the hostname is readable in the bytes the page printed"
-        ]
+        "failingTests": []
       }
     },
     {
       "id": "negative-claim-weakened",
-      "verdict": "KILLED",
+      "verdict": "SURVIVED (negative-claim)",
       "markers": [
         "negative-claim"
       ],
       "observed": {
-        "baselineBundle": "3666163c5ebe",
-        "mutatedBundle": "d7f9dfedbbfa",
-        "restoredBundle": "3666163c5ebe",
+        "baselineBundle": "3cec67e33638",
+        "mutatedBundle": "a8f9c03e72e2",
+        "restoredBundle": "3cec67e33638",
         "bundleMoved": true,
         "compiled": true,
-        "failingTests": [
-          "[claims] › e2e/claims.spec.ts:247:3 › the negative claim: a valid certificate does not establish the operator › 3. the limitation is on screen in that state, as the lab's own check"
-        ]
+        "failingTests": []
       }
     },
     {
@@ -273,14 +263,96 @@
         "nonpromise-honest"
       ],
       "observed": {
-        "baselineBundle": "3666163c5ebe",
-        "mutatedBundle": "3b44c2803278",
-        "restoredBundle": "3666163c5ebe",
+        "baselineBundle": "3cec67e33638",
+        "mutatedBundle": "5d563f340d1d",
+        "restoredBundle": "3cec67e33638",
         "bundleMoved": true,
         "compiled": true,
         "failingTests": [
-          "[claims] › e2e/claims.spec.ts:374:5 › the page never contradicts itself › no passing-everything sentence survives: expired"
+          "[claims] › e2e/claims.spec.ts:389:5 › the page never contradicts itself › no passing-everything sentence survives: expired"
         ]
+      }
+    },
+    {
+      "id": "prediction-scoring-inverted",
+      "verdict": "KILLED",
+      "markers": [
+        "prediction"
+      ],
+      "observed": {
+        "baselineBundle": "3cec67e33638",
+        "mutatedBundle": "3ca493701a12",
+        "restoredBundle": "3cec67e33638",
+        "bundleMoved": true,
+        "compiled": true,
+        "failingTests": [
+          "[claims] › e2e/claims.spec.ts:581:3 › the five-step lesson › a prediction is scored against the option the reader picked"
+        ]
+      }
+    },
+    {
+      "id": "quiz-scoring-inverted",
+      "verdict": "NOT A KILL (nothing served on the port)",
+      "markers": [
+        "quiz-lookalike",
+        "quiz-expiry",
+        "quiz-suffix"
+      ],
+      "observed": {
+        "baselineBundle": "3cec67e33638",
+        "mutatedBundle": "e42b6eb0ed63",
+        "restoredBundle": "3cec67e33638",
+        "bundleMoved": true,
+        "compiled": true,
+        "failingTests": [
+          "[claims] › e2e/claims.spec.ts:639:3 › the closing check › a wrong answer is explained and offers the experiment again",
+          "[claims] › e2e/claims.spec.ts:652:3 › the closing check › a right answer is scored right, and the count is computed"
+        ]
+      }
+    },
+    {
+      "id": "step-progress-off-by-one",
+      "verdict": "SURVIVED (step-progress)",
+      "markers": [
+        "step-progress"
+      ],
+      "observed": {
+        "baselineBundle": "3cec67e33638",
+        "mutatedBundle": "2249fc5f4067",
+        "restoredBundle": "3cec67e33638",
+        "bundleMoved": true,
+        "compiled": true,
+        "failingTests": []
+      }
+    },
+    {
+      "id": "quiz-count-off-by-one",
+      "verdict": "SURVIVED (quiz-progress)",
+      "markers": [
+        "quiz-progress"
+      ],
+      "observed": {
+        "baselineBundle": "3cec67e33638",
+        "mutatedBundle": "8e4d2a385667",
+        "restoredBundle": "3cec67e33638",
+        "bundleMoved": true,
+        "compiled": true,
+        "failingTests": []
+      }
+    },
+    {
+      "id": "change-summary-blind",
+      "verdict": "SURVIVED (changed)",
+      "markers": [
+        "changed"
+      ],
+      "observed": {
+        "baselineBundle": "3cec67e33638",
+        "mutatedBundle": "916f84d7f880",
+        "restoredBundle": "3cec67e33638",
+        "bundleMoved": true,
+        "compiled": true,
+        "failingTests": []
       }
     }
   ]

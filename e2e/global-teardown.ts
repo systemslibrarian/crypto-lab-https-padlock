@@ -57,16 +57,30 @@ export default function globalTeardown(): void {
 
   const observed = readObservations(id)
 
-  // A run that did not include the claims project cannot answer this question.
-  // Saying so is the difference between "nothing was asserted" and "the
-  // selection you ran does not cover the rule".
+  /*
+   * A run that executed no verdict helper cannot ANSWER this question, and
+   * failing it would be answering "no" to a question nobody asked.
+   *
+   * This used to throw, and it was wrong: `npm run test:a11y` legitimately runs
+   * only the a11y project, so the accessibility gate went red in CI with all
+   * three widths passing and the error naming a rule about a suite that had not
+   * been selected. That is precisely the failure mode 4.1a describes -- a step
+   * going red under a name that points at the wrong subject -- reproduced by the
+   * mechanism built to prevent it.
+   *
+   * Skipping here does NOT weaken the rule, because the rule is about runs that
+   * DO exercise the markers: every such run still has to satisfy it, and three
+   * of them exist (`npm run test:verdicts`, the whole suite, and every phase of
+   * scripts/mutate.mjs). What it stops is a run with nothing to say being made
+   * to say something.
+   */
   if (observed.length === 0) {
-    throw new Error(
-      'verdict runtime coverage: this run executed no expectVerdict/expectClaim call.\n' +
-        'The rule is checked against what ran, so a run that leaves out e2e/claims.spec.ts\n' +
-        'cannot answer it. Run `npm run test:verdicts`, or the whole suite, rather than a\n' +
-        'narrowed selection.',
+    console.log(
+      'verdict runtime coverage: not answered by this run -- it executed no ' +
+        'expectVerdict/expectClaim call, so there is nothing to check it against. ' +
+        'The rule is enforced by `npm run test:verdicts` and by the whole suite.',
     )
+    return
   }
 
   const seenTriples = new Set(observed.map((o) => `${o.test}${SEP}${o.id}${SEP}${o.claim}`))
