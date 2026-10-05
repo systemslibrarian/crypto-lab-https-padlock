@@ -56,10 +56,10 @@ describe('the path validator rejects every bad chain', () => {
     expect(result.reason).toContain('signed itself')
   })
 
-  it('rejects a chain whose root is not on the device', async () => {
+  it('rejects a chain whose root is not in the trusted list', async () => {
     // The same attacker chain that validates against the lab's store fails
     // against a store that does not hold the toy root. Nothing about the
-    // certificates changed; only what the device trusts did.
+    // certificates changed; only what the list trusts did.
     const emptyish = makeStore([{ pem: PEM.storeUsertrust, why: 'vendor' }])
     const chain = SCENARIOS[1]!.chain.map(parsePem)
     const result = await validatePath(chain, emptyish, CAPTURED_AT)

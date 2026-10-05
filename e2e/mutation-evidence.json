@@ -14,13 +14,13 @@
     "executed, and e2e/verdict-coverage.spec.ts, which fails a rotted anchor or an",
     "uncovered marker."
   ],
-  "ranAt": "2026-10-04T23:59:35.881Z",
-  "headSha": "8585e99e8c2b4ae37211c509599ca90751e5ac62",
+  "ranAt": "2026-10-05T00:12:07.254Z",
+  "headSha": "4103bb2a9a81a680f3b70861a8a302c1c3bd9375",
   "baselineSuite": {
     "passed": true,
     "tests": 57
   },
-  "killed": 11,
+  "killed": 20,
   "total": 20,
   "markerAssertionsCovered": 25,
   "results": [
@@ -37,7 +37,7 @@
         "bundleMoved": true,
         "compiled": true,
         "failingTests": [
-          "[claims] › e2e/claims.spec.ts:145:3 › promise 2, the name check, re-derived independently › a failing name check names the actual cause"
+          "claims.spec.ts > promise 2, the name check, re-derived independently > a failing name check names the actual cause"
         ]
       }
     },
@@ -54,7 +54,7 @@
         "bundleMoved": true,
         "compiled": true,
         "failingTests": [
-          "[claims] › e2e/claims.spec.ts:173:3 › promise 4, expiry, re-derived from the dates on screen › an expired certificate says so, with the signatures still good"
+          "claims.spec.ts > promise 4, expiry, re-derived from the dates on screen > an expired certificate says so, with the signatures still good"
         ]
       }
     },
@@ -73,8 +73,8 @@
         "bundleMoved": true,
         "compiled": true,
         "failingTests": [
-          "[claims] › e2e/claims.spec.ts:186:3 › promise 3, vouching › one flipped bit turns the vouching verdict red and names why",
-          "[claims] › e2e/claims.spec.ts:241:3 › the negative claim: a valid certificate does not establish the operator › 2. every verdict the page renders in that state reports success"
+          "claims.spec.ts > promise 3, vouching > one flipped bit turns the vouching verdict red and names why",
+          "claims.spec.ts > the negative claim: a valid certificate does not establish the operator > 2. every verdict the page renders in that state reports success"
         ]
       }
     },
@@ -91,7 +91,7 @@
         "bundleMoved": true,
         "compiled": true,
         "failingTests": [
-          "[claims] › e2e/claims.spec.ts:213:3 › promise 3, vouching › a self-signed leaf is rejected and the page says it signed itself"
+          "claims.spec.ts > promise 3, vouching > a self-signed leaf is rejected and the page says it signed itself"
         ]
       }
     },
@@ -108,7 +108,7 @@
         "bundleMoved": true,
         "compiled": true,
         "failingTests": [
-          "[claims] › e2e/claims.spec.ts:199:3 › promise 3, vouching › the root is reported as coming from the device, not the server"
+          "claims.spec.ts > promise 3, vouching > the root is reported as coming from the device, not the server"
         ]
       }
     },
@@ -125,7 +125,7 @@
         "bundleMoved": true,
         "compiled": true,
         "failingTests": [
-          "[claims] › e2e/claims.spec.ts:241:3 › the negative claim: a valid certificate does not establish the operator › 2. every verdict the page renders in that state reports success"
+          "claims.spec.ts > the negative claim: a valid certificate does not establish the operator > 2. every verdict the page renders in that state reports success"
         ]
       }
     },
@@ -142,7 +142,7 @@
         "bundleMoved": true,
         "compiled": true,
         "failingTests": [
-          "[claims] › e2e/claims.spec.ts:262:3 › the negative claim: a valid certificate does not establish the operator › 3. the limitation is on screen in that state, as the lab's own check"
+          "claims.spec.ts > the negative claim: a valid certificate does not establish the operator > 3. the limitation is on screen in that state, as the lab's own check"
         ]
       }
     },
@@ -159,7 +159,7 @@
         "bundleMoved": true,
         "compiled": true,
         "failingTests": [
-          "[claims] › e2e/claims.spec.ts:298:3 › the other three non-promises are shown, not asserted › honesty is not established, and says so with every check passing"
+          "claims.spec.ts > the other three non-promises are shown, not asserted > honesty is not established, and says so with every check passing"
         ]
       }
     },
@@ -176,13 +176,13 @@
         "bundleMoved": true,
         "compiled": true,
         "failingTests": [
-          "[claims] › e2e/claims.spec.ts:308:3 › the other three non-promises are shown, not asserted › the hostname is readable in the bytes the page printed"
+          "claims.spec.ts > the other three non-promises are shown, not asserted > the hostname is readable in the bytes the page printed"
         ]
       }
     },
     {
       "id": "cipher-strength-guaranteed",
-      "verdict": "SURVIVED (nonpromise-strength)",
+      "verdict": "KILLED",
       "markers": [
         "nonpromise-strength"
       ],
@@ -192,12 +192,14 @@
         "restoredBundle": "3cec67e33638",
         "bundleMoved": true,
         "compiled": true,
-        "failingTests": []
+        "failingTests": [
+          "claims.spec.ts > the other three non-promises are shown, not asserted > the cipher list is unauthenticated NOW and checked later, both stated"
+        ]
       }
     },
     {
       "id": "key-check-failed",
-      "verdict": "SURVIVED (promise-key)",
+      "verdict": "KILLED",
       "markers": [
         "promise-key"
       ],
@@ -207,12 +209,14 @@
         "restoredBundle": "3cec67e33638",
         "bundleMoved": true,
         "compiled": true,
-        "failingTests": []
+        "failingTests": [
+          "claims.spec.ts > promise 1, the key > the key check reports the curve the certificate actually carries"
+        ]
       }
     },
     {
       "id": "chain-length-off-by-one",
-      "verdict": "SURVIVED (chain-length)",
+      "verdict": "KILLED",
       "markers": [
         "chain-length"
       ],
@@ -222,12 +226,14 @@
         "restoredBundle": "3cec67e33638",
         "bundleMoved": true,
         "compiled": true,
-        "failingTests": []
+        "failingTests": [
+          "claims.spec.ts > the headline verdict > the chain-length claim equals the boxes the page actually drew"
+        ]
       }
     },
     {
       "id": "sni-offset-moved",
-      "verdict": "SURVIVED (sni-readable, sni-offset)",
+      "verdict": "KILLED",
       "markers": [
         "sni-readable",
         "sni-offset"
@@ -238,12 +244,14 @@
         "restoredBundle": "3cec67e33638",
         "bundleMoved": true,
         "compiled": true,
-        "failingTests": []
+        "failingTests": [
+          "claims.spec.ts > the other three non-promises are shown, not asserted > the hostname is readable in the bytes the page printed"
+        ]
       }
     },
     {
       "id": "negative-claim-weakened",
-      "verdict": "SURVIVED (negative-claim)",
+      "verdict": "KILLED",
       "markers": [
         "negative-claim"
       ],
@@ -253,7 +261,9 @@
         "restoredBundle": "3cec67e33638",
         "bundleMoved": true,
         "compiled": true,
-        "failingTests": []
+        "failingTests": [
+          "claims.spec.ts > the negative claim: a valid certificate does not establish the operator > 3. the limitation is on screen in that state, as the lab's own check"
+        ]
       }
     },
     {
@@ -269,7 +279,7 @@
         "bundleMoved": true,
         "compiled": true,
         "failingTests": [
-          "[claims] › e2e/claims.spec.ts:389:5 › the page never contradicts itself › no passing-everything sentence survives: expired"
+          "claims.spec.ts > the page never contradicts itself > no passing-everything sentence survives: expired"
         ]
       }
     },
@@ -286,13 +296,13 @@
         "bundleMoved": true,
         "compiled": true,
         "failingTests": [
-          "[claims] › e2e/claims.spec.ts:581:3 › the five-step lesson › a prediction is scored against the option the reader picked"
+          "claims.spec.ts > the five-step lesson > a prediction is scored against the option the reader picked"
         ]
       }
     },
     {
       "id": "quiz-scoring-inverted",
-      "verdict": "NOT A KILL (nothing served on the port)",
+      "verdict": "KILLED",
       "markers": [
         "quiz-lookalike",
         "quiz-expiry",
@@ -305,14 +315,14 @@
         "bundleMoved": true,
         "compiled": true,
         "failingTests": [
-          "[claims] › e2e/claims.spec.ts:639:3 › the closing check › a wrong answer is explained and offers the experiment again",
-          "[claims] › e2e/claims.spec.ts:652:3 › the closing check › a right answer is scored right, and the count is computed"
+          "claims.spec.ts > the closing check > a wrong answer is explained and offers the experiment again",
+          "claims.spec.ts > the closing check > a right answer is scored right, and the count is computed"
         ]
       }
     },
     {
       "id": "step-progress-off-by-one",
-      "verdict": "SURVIVED (step-progress)",
+      "verdict": "KILLED",
       "markers": [
         "step-progress"
       ],
@@ -322,12 +332,14 @@
         "restoredBundle": "3cec67e33638",
         "bundleMoved": true,
         "compiled": true,
-        "failingTests": []
+        "failingTests": [
+          "claims.spec.ts > the five-step lesson > the expiry step shows the dates failing and the signatures holding"
+        ]
       }
     },
     {
       "id": "quiz-count-off-by-one",
-      "verdict": "SURVIVED (quiz-progress)",
+      "verdict": "KILLED",
       "markers": [
         "quiz-progress"
       ],
@@ -337,12 +349,14 @@
         "restoredBundle": "3cec67e33638",
         "bundleMoved": true,
         "compiled": true,
-        "failingTests": []
+        "failingTests": [
+          "claims.spec.ts > the closing check > three questions appear only after the lesson is finished"
+        ]
       }
     },
     {
       "id": "change-summary-blind",
-      "verdict": "SURVIVED (changed)",
+      "verdict": "KILLED",
       "markers": [
         "changed"
       ],
@@ -352,7 +366,9 @@
         "restoredBundle": "3cec67e33638",
         "bundleMoved": true,
         "compiled": true,
-        "failingTests": []
+        "failingTests": [
+          "claims.spec.ts > the five-step lesson > the causal summary names what changed AND what did not"
+        ]
       }
     }
   ]
