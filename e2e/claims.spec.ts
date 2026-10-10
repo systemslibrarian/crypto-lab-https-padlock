@@ -166,6 +166,29 @@ test.describe('promise 2, the name check, re-derived independently', () => {
     })
   }
 
+  for (const width of [320, 390, 1280]) {
+    test(`pasted URL badges preserve their complete text without page overflow at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 })
+      await bootExplore(page)
+      for (const address of [
+        'https://other.example/#user@github.com',
+        'https://other.example/?email=user@github.com',
+        `https://other.example/?tracking=${'x'.repeat(200)}@github.com`,
+      ]) {
+        const expected = new URL(address).hostname === 'github.com' ? 'pass' : 'fail'
+        await page.locator('#address-input').fill(expected === 'pass' ? 'other.example' : 'github.com')
+        await expect(page.locator('[data-verdict="promise-name"]')).toHaveAttribute('data-result', expected === 'pass' ? 'fail' : 'pass')
+        await page.locator('#address-input').fill(address)
+        await expect(page.locator('[data-verdict="promise-name"]')).toHaveAttribute('data-result', expected)
+        const badge = page.locator('.badges .badge').filter({ hasText: address })
+        await expect(badge).toBeVisible()
+        await expect(badge).toContainText(address)
+        const geometry = await page.evaluate(() => ({ document: document.documentElement.scrollWidth, viewport: innerWidth }))
+        expect(geometry.document).toBeLessThanOrEqual(geometry.viewport + 1)
+      }
+    })
+  }
+
   test('a failing name check names the actual cause', async ({ page }) => {
     await bootExplore(page)
     await page.locator('#address-input').fill('evil.example')
