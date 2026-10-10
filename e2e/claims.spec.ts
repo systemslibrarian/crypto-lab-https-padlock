@@ -142,6 +142,30 @@ test.describe('promise 2, the name check, re-derived independently', () => {
     })
   }
 
+  for (const address of [
+    'https://github.com/path@other.example',
+    'https://github.com/?email=user@other.example',
+    'https://github.com/#user@other.example',
+  ]) {
+    test(`URL authority controls the name verdict and ClientHello: ${address}`, async ({ page }) => {
+      await bootExplore(page)
+      // Establish a failing state first so a stale baseline cannot satisfy
+      // the assertions while the asynchronous refresh is still pending.
+      await page.locator('#address-input').fill('other.example')
+      await expect(page.locator('[data-verdict="promise-name"]')).toHaveAttribute('data-result', 'fail')
+      await page.locator('#address-input').fill(address)
+      const hostname = new URL(address).hostname
+      await expect(page.locator('[data-verdict="promise-name"]')).toHaveAttribute('data-result', 'pass')
+      await expect.poll(async () => {
+        const hex = await read(page, '#wire .bytes')
+        const bytes = hex.split(/\s+/).filter((t) => /^[0-9a-f]{2}$/.test(t)).map((t) => parseInt(t, 16))
+        const text = String.fromCharCode(...bytes)
+        return text.includes(hostname) && !text.includes('other.example')
+      }).toBe(true)
+      await expectClaim(page, 'sni-readable', { contains: hostname })
+    })
+  }
+
   test('a failing name check names the actual cause', async ({ page }) => {
     await bootExplore(page)
     await page.locator('#address-input').fill('evil.example')

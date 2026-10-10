@@ -36,8 +36,10 @@ function normalise(name: string): string {
  * extracts the host and matches THAT. Worse, the whole URL went into the SNI
  * exhibit, so the page showed a first message no browser would ever send.
  *
- * So the input is parsed the way a browser parses it: scheme stripped, userinfo
- * dropped, port dropped, path and query dropped. What is left is compared.
+ * This is a bounded parser for scheme://authority URLs and bare-host inputs
+ * (optionally with userinfo, a port or a path). Strip the scheme, isolate the
+ * authority, then drop userinfo and the port. An @ in a path, query or fragment
+ * cannot change the host. This is not a general WHATWG URL implementation.
  * Anything that still is not a plain DNS name is refused by `isPlainDnsName`
  * rather than guessed at.
  */
@@ -46,11 +48,11 @@ export function hostFromInput(raw: string): string {
   if (s === '') return ''
   // Scheme, if any.
   s = s.replace(/^[a-z][a-z0-9+.-]*:\/\//i, '')
-  // Anything before an @ is userinfo, not a host.
+  // Path, query or fragment ends the authority BEFORE interpreting userinfo.
+  s = s.split(/[/?#]/)[0] ?? ''
+  // Only an @ inside the authority separates userinfo from the host.
   const at = s.lastIndexOf('@')
   if (at !== -1) s = s.slice(at + 1)
-  // Path, query or fragment ends the authority.
-  s = s.split(/[/?#]/)[0] ?? ''
   // A bracketed IPv6 literal is not a DNS name; leave it intact and let
   // isPlainDnsName refuse it rather than mangling it into something plausible.
   if (s.startsWith('[')) return normalise(s)

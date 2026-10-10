@@ -58,6 +58,31 @@ describe('RFC 6125 name matching', () => {
 })
 
 describe('what the reader actually types', () => {
+  it.each([
+    'https://github.com/contact@docs.example',
+    'https://github.com/?email=user@docs.example',
+    'https://github.com/#user@docs.example',
+    'https://user:pw@github.com:443/path@other.example?email=a@b.example#c@d.example',
+    'https://other.example/path@github.com',
+    'https://other.example/?email=user@github.com',
+    'https://other.example/#user@github.com',
+  ])('matches the platform URL hostname for %s', (raw) => {
+    const expected = new URL(raw).hostname
+    expect(hostFromInput(raw)).toBe(expected)
+    expect(matchName(raw, [expected]).matched).toBe(true)
+    expect(matchName(raw, ['github.com']).matched).toBe(expected === 'github.com')
+  })
+
+  it.each([
+    'github.com/path@other.example',
+    'github.com/?email=user@other.example',
+    'github.com/#user@other.example',
+    'user:pw@github.com:443/path@other.example',
+  ])('bounds userinfo to the authority of a bare-host input: %s', (raw) => {
+    expect(hostFromInput(raw)).toBe(new URL(`https://${raw}`).hostname)
+    expect(matchName(raw, ['github.com']).matched).toBe(true)
+  })
+
   it('extracts the host from a pasted URL, the way a browser does', () => {
     for (const raw of [
       'https://github.com/',
