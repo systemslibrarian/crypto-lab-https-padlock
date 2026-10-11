@@ -1,3 +1,5 @@
+// X.509 2 requires Reflect metadata before its dependency-injection setup runs.
+import 'reflect-metadata'
 import * as x509 from '@peculiar/x509'
 import type { Validity } from './types'
 
