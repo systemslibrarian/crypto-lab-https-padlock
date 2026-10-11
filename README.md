@@ -47,6 +47,13 @@ find the hostname in it yourself.
 The certificates and their provenance are documented in [`certs/PROVENANCE.md`](certs/PROVENANCE.md),
 including the command each was captured with.
 
+The address input accepts ASCII DNS hosts and `scheme://authority` URLs, with
+userinfo interpreted only inside the authority. An `@` in a path, query or
+fragment does not change the hostname. This is a bounded teaching parser, not
+the complete WHATWG URL implementation. A mismatched-address badge preserves
+the pasted string and wraps long fragments or query values without widening
+the page, including at the 320px reflow floor.
+
 ## Exhibits
 
 The **guided lesson is the default**: five steps, one question and one action each, with an

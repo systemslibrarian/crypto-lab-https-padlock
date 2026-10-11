@@ -17,6 +17,12 @@ const BASE = `http://localhost:${PORT}/crypto-lab-https-padlock/`
 
 export default defineConfig({
   testDir: './e2e',
+  // The claims and coverage projects parallelise; the a11y project does not.
+  // Set per project below, because the two have opposite needs: claims tests
+  // are independent page loads that gain ~4x from workers, while the a11y drive
+  // is one long scan whose cost is CPU-bound and whose output is easier to read
+  // in order. The observation sink was built for separate worker processes from
+  // the start -- it appends one line at a time with O_APPEND for exactly this.
   fullyParallel: false,
   timeout: 180_000,
   forbidOnly: !!process.env.CI,
@@ -39,8 +45,18 @@ export default defineConfig({
     },
     // Claims assert what the page SAYS and what it COMPUTES; neither varies by
     // browser, so one engine is the honest cost.
-    { name: 'claims', testMatch: /claims\.spec\.ts/, use: { ...devices['Desktop Chrome'] } },
-    { name: 'coverage', testMatch: /verdict-coverage\.spec\.ts/, use: { ...devices['Desktop Chrome'] } },
+    {
+      name: 'claims',
+      testMatch: /claims\.spec\.ts/,
+      fullyParallel: true,
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'coverage',
+      testMatch: /verdict-coverage\.spec\.ts/,
+      fullyParallel: true,
+      use: { ...devices['Desktop Chrome'] },
+    },
   ],
   webServer: {
     // Build BEFORE serving. `vite preview` serves whatever is already in

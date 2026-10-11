@@ -266,19 +266,63 @@ const notAKill = (output) => NOT_A_KILL.find(({ pattern }) => pattern.test(strip
  * and the per-test answer is read out of the reporter. */
 async function runSuite(label) {
   if (!(await waitForPortFree(label))) {
-    return { failed: true, output: 'PORT_NEVER_FREED', aborted: true }
+    return { failed: true, output: 'PORT_NEVER_FREED', titles: [], aborted: true }
   }
-  const cmd = 'npx playwright test --project=claims --project=coverage --reporter=list --retries=0'
+  // THE JSON REPORTER, not the human one.
+  //
+  // This used to run `--reporter=list` and recover failing test titles with a
+  // regex over the printed summary. That is a parser for a format designed to
+  // be read, and it broke exactly where it hurts most: a long title wraps, the
+  // line-anchored regex stops matching, the failure becomes invisible, and the
+  // mutation is scored SURVIVED -- which reads as "the test has no teeth" when
+  // the test had bitten perfectly. Eight of twenty were mis-scored that way on
+  // 2026-10-04, every one of them with a long owning-test title, and each
+  // killed correctly when run alone.
+  //
+  // A survivor is the one verdict worth stopping for, so the cost of a false
+  // one is somebody auditing a check that works. Structured output removes the
+  // parser rather than improving it.
+  const cmd = 'npx playwright test --project=claims --project=coverage --reporter=json --retries=0'
+  let raw
+  let failed = false
   try {
-    return { failed: false, output: sh(cmd) }
+    raw = sh(cmd)
   } catch (err) {
-    return { failed: true, output: `${err.stdout ?? ''}${err.stderr ?? ''}` }
+    failed = true
+    raw = `${err.stdout ?? ''}`
+    if (!raw.trim()) raw = `${err.stderr ?? ''}`
   }
+  return { failed, output: raw, titles: failingTitles(raw) }
 }
 
-/** Failing test titles, as the list reporter prints them: `  N) path:line > title`. */
-function failingTitles(output) {
-  return [...strip(output).matchAll(/^\s*\d+\)\s+(.+?)(?:\s*[\u2500-]{3,})?\s*$/gm)].map((m) => m[1].trim())
+/**
+ * Failing spec titles, from the JSON reporter.
+ *
+ * Returns the FULL path of each failing spec -- describe blocks plus the test
+ * title -- so a caller can match on any part of it. A spec with no result, or
+ * one that was interrupted, counts as failing: the question this answers is
+ * "did the owning test pass", and anything that is not a pass is not a pass.
+ */
+function failingTitles(raw) {
+  const start = raw.indexOf('{')
+  if (start === -1) return []
+  let report
+  try {
+    report = JSON.parse(raw.slice(start))
+  } catch {
+    return []
+  }
+  const out = []
+  const walk = (suite, trail) => {
+    const here = suite.title ? [...trail, suite.title] : trail
+    for (const spec of suite.specs ?? []) {
+      const ok = spec.ok === true
+      if (!ok) out.push([...here, spec.title].join(' > '))
+    }
+    for (const child of suite.suites ?? []) walk(child, here)
+  }
+  for (const suite of report.suites ?? []) walk(suite, [])
+  return out
 }
 
 function apply(entry, forward) {
@@ -311,7 +355,14 @@ if (baseline.failed) {
   rmSync(TREE, { recursive: true, force: true })
   process.exit(2)
 }
-const baselineCount = (strip(baseline.output).match(/(\d+)\s+passed/) || [])[1] ?? '?'
+const baselineCount = (() => {
+  try {
+    const r = JSON.parse(baseline.output.slice(baseline.output.indexOf('{')))
+    return r.stats?.expected ?? '?'
+  } catch {
+    return '?'
+  }
+})()
 console.log(`baseline suite PASSED (${baselineCount} tests)\n`)
 
 const results = []
@@ -331,7 +382,7 @@ for (const id of ids) {
       rmSync(TREE, { recursive: true, force: true })
       process.exit(2)
     }
-    const failed = built ? failingTitles(mutated.output) : []
+    const failed = built ? mutated.titles : []
     const runs = markers.map(([marker, kill]) => [
       marker,
       { failed: failed.some((t) => t.includes(kill.test)), output: mutated.output },
