@@ -34,6 +34,8 @@
  * deliberately, and update that file when you do.
  */
 
+// The standalone entry point must initialize X.509 2 independently of the UI.
+import 'reflect-metadata'
 import { webcrypto } from 'node:crypto'
 import { writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
