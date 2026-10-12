@@ -26,7 +26,7 @@ import type { Link, Role } from './types'
  */
 
 export interface AnchorStore {
-  /** The anchors, keyed by subject name, as a device store is. */
+  /** Subject-name lookup finds candidates; their held public key determines trust. */
   readonly anchors: readonly { subject: string; cert: x509.X509Certificate; why: string }[]
   find(subject: string): { subject: string; cert: x509.X509Certificate; why: string } | undefined
 }
@@ -160,22 +160,35 @@ export async function validatePath(
     reachedAnchor = link.verified
     anchorWhy = anchor.why
   } else if (store.find(top.subject)) {
-    // The device has this very certificate. The walk is already home: the
-    // served copy is redundant, which is the ordinary case for a chain that
-    // ends in a cross-signed root.
+    // A cross-signed root may have different certificate bytes and an issuer
+    // outside this store. Its name AND public key must identify the held
+    // anchor (RFC 5280 6.1.1(d)); copying the name alone grants no authority.
     const held = store.find(top.subject)!
-    steps[steps.length - 1] = { ...steps[steps.length - 1]!, role: 'root', fromStore: true }
-    reachedAnchor = true
-    anchorWhy = held.why
+    if (!sameAnchorKey(top, held.cert)) {
+      reason = reason || `${label(top)} has a name in the trusted list, but its public key does not match the trusted certificate. A matching name alone does not make its key trusted.`
+    } else {
+      // Show the actual configured certificate, not the server's different
+      // cross-signed copy mislabeled as something supplied by the store.
+      steps[steps.length - 1] = {
+        ...steps[steps.length - 1]!, role: 'root', name: label(held.cert),
+        cert: held.cert, fromStore: true,
+        inDate: validityAt(held.cert, at).inWindow,
+      }
+      reachedAnchor = true
+      anchorWhy = held.why
+    }
   } else if (isSelfIssued(top)) {
     reason = reason || `${label(top)} signed itself, and it is not in the trusted list. Anyone can sign their own certificate, so a signature from the same name it is claiming proves nothing.`
   } else {
     reason = reason || `The chain stops at ${label(top)}, which was signed by ${label2(top)} -- and that certificate is neither in the chain nor in the trusted list. The walk has nowhere left to go.`
   }
 
-  const allInDate = steps.every((s) => s.inDate)
+  // Replacing a redundant top with the actual held anchor must not forget a
+  // failed date on the served copy. Held-anchor dates remain this lab's local
+  // teaching policy, matching the ordinary issuer-anchor branch above.
+  const allInDate = validityAt(top, at).inWindow && steps.every((s) => s.inDate)
   if (!allInDate && !reason) {
-    const bad = steps.find((s) => !s.inDate)!
+    const bad = steps.find((s) => !s.inDate) || { name: label(top), cert: top }
     const v = validityAt(bad.cert, at)
     reason = v.side === 'after'
       ? `${bad.name} expired on ${v.notAfter.toISOString().slice(0, 10)}, which is before the date you are checking.`
@@ -235,5 +248,20 @@ async function judgeLink(
     reason: ok
       ? ''
       : `${issuerName}'s signature over ${childName} does not check out. The bytes have been changed since it was signed, or it was never signed by this certificate at all.`,
+  }
+}
+
+/** Compare the complete SPKI: key algorithm, parameters and public-key bytes. */
+function sameAnchorKey(
+  served: x509.X509Certificate,
+  held: x509.X509Certificate,
+): boolean {
+  try {
+    const a = new Uint8Array(served.publicKey.rawData)
+    const b = new Uint8Array(held.publicKey.rawData)
+    return a.length > 0 && a.length === b.length && a.every((byte, i) => byte === b[i])
+  } catch {
+    // Unreadable identity cannot establish correspondence with a held key.
+    return false
   }
 }
