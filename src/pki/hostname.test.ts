@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { hostFromInput, isPlainDnsName, matchesOne, matchName } from './hostname'
 
-describe('RFC 6125 name matching', () => {
+describe('RFC 9525 name matching', () => {
   it('matches an exact name, case-insensitively and past a trailing dot', () => {
     expect(matchesOne('github.com', 'github.com').matched).toBe(true)
     expect(matchesOne('GitHub.COM', 'github.com').matched).toBe(true)

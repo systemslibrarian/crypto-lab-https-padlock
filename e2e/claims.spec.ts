@@ -109,7 +109,7 @@ test.describe('promise 1, the key', () => {
 
 test.describe('promise 2, the name check, re-derived independently', () => {
   /**
-   * RFC 6125 matching, implemented a second time HERE, in the test, from the
+   * RFC 9525 matching, implemented a second time HERE, in the test, from the
    * names the page printed. It shares no code with src/pki/hostname.ts, so a
    * bug in that module cannot be ratified by this assertion.
    */
@@ -398,7 +398,7 @@ test.describe('the other three non-promises are shown, not asserted', () => {
       .toContain('no')
     // The correction that matters: TLS 1.3 DOES check afterwards that the
     // negotiation was not altered. Saying only "unauthenticated" taught a
-    // beginner that downgrades are free, which is false -- RFC 8446 signs the
+    // beginner that downgrades are free, which is false -- RFC 9846 signs the
     // handshake transcript. The honest limitation is narrower: a padlock does
     // not tell you WHICH option was chosen.
     expect(await evidence(page, '[data-verdict="nonpromise-strength"]', 'Checked later in the handshake'))

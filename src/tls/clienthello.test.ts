@@ -67,7 +67,7 @@ const RANDOM = new Uint8Array(32).fill(0xa1)
 const SHARE = new Uint8Array(32).fill(0xb2)
 const SESSION = new Uint8Array(32).fill(0xc3)
 
-describe('TLS 1.3 ClientHello encoding (RFC 8446 4.1.2, RFC 6066 3)', () => {
+describe('TLS 1.3 ClientHello encoding (RFC 9846 4.2.2, RFC 6066 3)', () => {
   it('a structural walk finds the hostname the encoder claims it placed', () => {
     const hello = encodeClientHello('github.com', RANDOM, SHARE, SESSION)
     const walked = readSniByWalking(hello.bytes)
@@ -136,7 +136,7 @@ describe('TLS 1.3 ClientHello encoding (RFC 8446 4.1.2, RFC 6066 3)', () => {
     expect(hello.keyShareIsReal).toBe(true)
   })
 
-  it('the required extensions RFC 8446 9.2 names are all present', () => {
+  it('the required extensions RFC 9846 9.2 names are all present', () => {
     const hello = encodeClientHello('github.com', RANDOM, SHARE, SESSION)
     const b = hello.bytes
     // Walk the extension vector and collect the type codes, independently of

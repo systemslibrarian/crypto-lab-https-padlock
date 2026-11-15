@@ -61,7 +61,7 @@ export const SCOPE_HEADING = 'What is real here, and what is not'
 export const SCOPE_REAL = [
   'The certificates are real. The one for github.com was captured from the public internet on 4 October 2026; the two trusted roots came out of a real operating system trust store on the same day.',
   'Every signature check runs in your browser through WebCrypto, over the real certificate bytes. Flip one bit and it fails, because it is actually being checked.',
-  'The first-message bytes are a real TLS 1.3 ClientHello, with the four extensions RFC 8446 requires of a client expecting a certificate, and a real X25519 public key generated here.',
+  'The first-message bytes are a real TLS 1.3 ClientHello, with the four extensions RFC 9846 requires of a client expecting a certificate, and a real X25519 public key generated here.',
 ]
 
 export const SCOPE_NOT = [

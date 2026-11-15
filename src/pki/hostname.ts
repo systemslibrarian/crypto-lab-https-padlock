@@ -2,7 +2,7 @@ import type { NameMatch } from './types'
 
 /**
  * Does the address in the browser's address bar match the name in the
- * certificate? RFC 6125, as the web actually applies it.
+ * certificate? RFC 9525, as the web actually applies it.
  *
  * Two rules matter, and the second is the one that surprises people:
  *

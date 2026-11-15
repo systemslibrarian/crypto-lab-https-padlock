@@ -48,7 +48,7 @@
           }
         }
       },
-      "why": "Flips the one RFC 6125 decision every name verdict reads, so an address the certificate is NOT for matches."
+      "why": "Flips the one RFC 9525 decision every name verdict reads, so an address the certificate is NOT for matches."
     },
     "validity-window-inverted": {
       "file": "src/pki/parse.ts",

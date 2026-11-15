@@ -58,7 +58,7 @@ export interface AssessInput {
  * public key is NOT the key your traffic is encrypted to. That was RSA key
  * transport, and TLS 1.3 removed it. In TLS 1.3 the certificate's key does one
  * job: the server signs part of the handshake with the private half
- * (CertificateVerify, RFC 8446 section 4.4.3) and the client checks that
+ * (CertificateVerify, RFC 9846 section 4.5.2) and the client checks that
  * signature with this public half. The encryption keys come from a separate
  * ephemeral (EC)DHE exchange that this certificate has no part in. Calling this
  * "a key to encrypt to" taught a beginner something false about the protocol
@@ -102,7 +102,7 @@ async function checkKey(leaf: x509.X509Certificate): Promise<CheckResult> {
   }
 }
 
-/** Promise 2 -- the name matches. RFC 6125, computed in hostname.ts. */
+/** Promise 2 -- the name matches. RFC 9525, computed in hostname.ts. */
 function checkName(leaf: x509.X509Certificate, address: string): CheckResult {
   const presented = dnsNames(leaf)
   const m = matchName(address, presented)

@@ -21,7 +21,8 @@ chain with **WebCrypto**, and encodes a real TLS 1.3 `ClientHello` byte for byte
 find the hostname in it yourself.
 
 - **Primitives and specs.** RFC 5280 (X.509 path validation, a stated teaching subset),
-  RFC 8446 (TLS 1.3 `ClientHello`), RFC 6066 (server_name / SNI), RFC 6125 (name matching).
+  RFC 9846 (TLS 1.3 `ClientHello`; it obsoletes RFC 8446), RFC 6066 (server_name / SNI),
+  RFC 9525 (name matching; it obsoletes RFC 6125).
   Signatures are real ECDSA over P-256 and P-384, verified in `SubtleCrypto`.
 - **The security model.** The lab reads certificates that were already captured. It makes no
   network connection and runs no handshake, so it never claims to have *observed* encryption.
@@ -33,6 +34,12 @@ find the hostname in it yourself.
 - **Not production crypto.** This is a teaching demo. Its path validation deliberately omits
   revocation, name constraints, policy constraints and path length, so a chain this page
   accepts is **not** thereby a chain a browser would accept.
+- **Standards reviewed 15 November 2026.** RFC 8446 was obsoleted by
+  [RFC 9846](https://www.rfc-editor.org/info/rfc9846) in July 2026, and RFC 6125 by
+  [RFC 9525](https://www.rfc-editor.org/info/rfc9525). Section numbers in this README and in
+  the source follow RFC 9846, which renumbered the handshake sections: `ClientHello` §4.2.2,
+  signature_algorithms §4.3.3, key_share §4.3.8, CertificateVerify §4.5.2; the
+  mandatory-to-implement extensions stay in §9.2.
 
 ### What is real, and what is not
 
@@ -42,7 +49,7 @@ find the hostname in it yourself.
 | Two roots lifted from a real macOS system trust store | Your device's actual trust list — this is the lab's committed copy of one, plus an extra toy root |
 | Every signature check, in WebCrypto, over real DER | Revocation (OCSP/CRL), name constraints, policy constraints, path length |
 | The toy hierarchy: real P-256 keys, real signatures over real TBS bytes | The toy root's *trustworthiness* — no real device carries it; the lab adds it on purpose |
-| The `ClientHello`: correct lengths, a real X25519 public key, and the four extensions RFC 8446 §9.2 requires | Sending that message, or using the key — the private half is discarded unused |
+| The `ClientHello`: correct lengths, a real X25519 public key, and the four extensions RFC 9846 §9.2 requires | Sending that message, or using the key — the private half is discarded unused |
 
 The certificates and their provenance are documented in [`certs/PROVENANCE.md`](certs/PROVENANCE.md),
 including the command each was captured with.
@@ -73,7 +80,7 @@ lesson is a simulation of the lab.
 4. **The four promises**, each leading with a plain state — `Key loads`, `Matches`,
    `Signature verifies`, `In date` — and the explanation one click behind it. A usable key,
    imported by WebCrypto with what it is actually for spelled out; the name matching under
-   RFC 6125 after the host is extracted from whatever you typed; somebody vouching; and not
+   RFC 9525 after the host is extracted from whatever you typed; somebody vouching; and not
    expired. When one fails, the cause is shown **without** being asked for.
 5. **Break it yourself.** Type an address the certificate is not for. Move the date past the
    expiry. Flip one bit of the signature. Each failure is produced by the real validator, and
@@ -182,7 +189,7 @@ npm run mint:toy     # re-mint the toy hierarchy (rotates its keys)
 | File | What it proves |
 |---|---|
 | `src/pki/kat.test.ts` | **13 known-answer tests.** Every vendored chain parses to the subject, issuer, serial, validity window, SANs and SHA-256 fingerprint that `openssl x509` reports. The expected values are literals read out of the certificates *before* this lab could parse them. |
-| `src/pki/hostname.test.ts` | RFC 6125 matching: exact names, wildcards standing for exactly one label, the ignored Common Name, host extraction from a pasted URL the way a browser does it, and fail-closed behaviour on anything that is not a plain DNS name. |
+| `src/pki/hostname.test.ts` | RFC 9525 matching: exact names, wildcards standing for exactly one label, the ignored Common Name, host extraction from a pasted URL the way a browser does it, and fail-closed behaviour on anything that is not a plain DNS name. |
 | `src/pki/path.test.ts` | The correct path accepts the good chain and **rejects every bad one** — missing intermediate, one-byte signature alteration, expired, self-signed leaf, a root the device does not hold, and a parent not permitted to sign. |
 | `src/pki/assess.test.ts` | Every verdict the page renders, computed: which checks fail for which breakage, that promise 1 reports a key WebCrypto actually **imported** rather than a parsed field, and that the attacker fixture renders **ALARM** rather than a green success. |
 | `src/tls/clienthello.test.ts` | The `ClientHello` encoder, checked by an **independent structural walk** of the TLS message that shares no arithmetic with the encoder's own offsets, plus a check that all five required extensions are present and that the browser path really produces an X25519 key. |
@@ -201,7 +208,7 @@ The deploy is blocked if it fails.
 
 **The claims suite** (`npm run test:verdicts`) checks the page tells the truth: **51 claims
 tests plus 4 coverage rules**. The three biggest claims are **re-derived independently** in the
-test rather than recomputed the way the source computes them — RFC 6125 matching is implemented
+test rather than recomputed the way the source computes them — RFC 9525 matching is implemented
 a second time in the spec, expiry is recomputed from the dates printed on screen, and the
 hostname's position in the `ClientHello` is found by searching the page's own printed bytes
 (anchored on the name's length prefix, because at length 97 that prefix encodes as the letter
