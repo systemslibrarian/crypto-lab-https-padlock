@@ -49,7 +49,7 @@ find the hostname in it yourself.
 | Two roots lifted from a real macOS system trust store | Your device's actual trust list — this is the lab's committed copy of one, plus an extra toy root |
 | Every signature check, in WebCrypto, over real DER | Revocation (OCSP/CRL), name constraints, policy constraints, path length |
 | The toy hierarchy: real P-256 keys, real signatures over real TBS bytes | The toy root's *trustworthiness* — no real device carries it; the lab adds it on purpose |
-| The `ClientHello`: correct lengths, a real X25519 public key, and the four extensions RFC 9846 §9.2 requires | Sending that message, or using the key — the private half is discarded unused |
+| The `ClientHello`: correct lengths, a real X25519 public key, `server_name` (RFC 6066) plus the four extensions RFC 9846 §9.2 requires of a client doing ECDHE with certificate authentication — `supported_versions`, `supported_groups`, `signature_algorithms`, `key_share` | Sending that message, or using the key — the private half is discarded unused |
 
 The certificates and their provenance are documented in [`certs/PROVENANCE.md`](certs/PROVENANCE.md),
 including the command each was captured with.
@@ -192,7 +192,7 @@ npm run mint:toy     # re-mint the toy hierarchy (rotates its keys)
 | `src/pki/hostname.test.ts` | RFC 9525 matching: exact names, wildcards standing for exactly one label, the ignored Common Name, host extraction from a pasted URL the way a browser does it, and fail-closed behaviour on anything that is not a plain DNS name. |
 | `src/pki/path.test.ts` | The correct path accepts the good chain and **rejects every bad one** — missing intermediate, one-byte signature alteration, expired, self-signed leaf, a root the device does not hold, and a parent not permitted to sign. |
 | `src/pki/assess.test.ts` | Every verdict the page renders, computed: which checks fail for which breakage, that promise 1 reports a key WebCrypto actually **imported** rather than a parsed field, and that the attacker fixture renders **ALARM** rather than a green success. |
-| `src/tls/clienthello.test.ts` | The `ClientHello` encoder, checked by an **independent structural walk** of the TLS message that shares no arithmetic with the encoder's own offsets, plus a check that all five required extensions are present and that the browser path really produces an X25519 key. |
+| `src/tls/clienthello.test.ts` | The `ClientHello` encoder, checked by an **independent structural walk** of the TLS message that shares no arithmetic with the encoder's own offsets, plus a check that all five extensions the encoder writes are present (`server_name` from RFC 6066, plus the four RFC 9846 §9.2 requires of this client) and that the browser path really produces an X25519 key. |
 | `src/tls/span.test.ts` | The declared position of the hostname against a byte search, at every length from 1 to 200 — including the n=97 case where the name's own length prefix encodes as the letter `a` and a naive search lands one byte early. |
 
 **The accessibility gate** (`npm run test:a11y`) scans the *production build* in Chromium for

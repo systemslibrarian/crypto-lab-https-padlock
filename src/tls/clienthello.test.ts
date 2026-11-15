@@ -136,7 +136,7 @@ describe('TLS 1.3 ClientHello encoding (RFC 9846 4.2.2, RFC 6066 3)', () => {
     expect(hello.keyShareIsReal).toBe(true)
   })
 
-  it('the required extensions RFC 9846 9.2 names are all present', () => {
+  it('all five extensions the encoder writes are present: server_name plus the four RFC 9846 9.2 requires of this client', () => {
     const hello = encodeClientHello('github.com', RANDOM, SHARE, SESSION)
     const b = hello.bytes
     // Walk the extension vector and collect the type codes, independently of
@@ -156,7 +156,12 @@ describe('TLS 1.3 ClientHello encoding (RFC 9846 4.2.2, RFC 6066 3)', () => {
     }
     expect(i, 'the extension vector must end where its length said').toBe(end)
     // server_name is RFC 6066; the other four are required of a client that
-    // expects the server to authenticate with a certificate.
+    // expects the server to authenticate with a certificate. RFC 9846 9.2
+    // lists seven mandatory-to-IMPLEMENT extensions (server_name among them);
+    // the four below are the ones it requires this ClientHello to CARRY --
+    // supported_versions always, signature_algorithms for certificate
+    // authentication, and supported_groups with key_share for ECDHE.
+    expect(types, 'the encoder writes exactly these five extensions').toHaveLength(5)
     for (const [code, name] of [
       [0x0000, 'server_name'],
       [0x002b, 'supported_versions'],
