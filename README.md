@@ -49,7 +49,7 @@ find the hostname in it yourself.
 | Two roots lifted from a real macOS system trust store | Your device's actual trust list — this is the lab's committed copy of one, plus an extra toy root |
 | Every signature check, in WebCrypto, over real DER | Revocation (OCSP/CRL), name constraints, policy constraints, path length |
 | The toy hierarchy: real P-256 keys, real signatures over real TBS bytes | The toy root's *trustworthiness* — no real device carries it; the lab adds it on purpose |
-| The `ClientHello`: correct lengths, a real X25519 public key, `server_name` (RFC 6066) plus the four extensions RFC 9846 §9.2 requires of a client doing ECDHE with certificate authentication — `supported_versions`, `supported_groups`, `signature_algorithms`, `key_share` | Sending that message, or using the key — the private half is discarded unused |
+| The `ClientHello`: correct lengths, a freshly generated X25519 public key when supported (otherwise labelled placeholder bytes), `server_name` (RFC 6066) plus the four extensions RFC 9846 §9.2 requires of a client doing ECDHE with certificate authentication — `supported_versions`, `supported_groups`, `signature_algorithms`, `key_share` | Sending that message, or using the key — the private half is discarded unused |
 
 The certificates and their provenance are documented in [`certs/PROVENANCE.md`](certs/PROVENANCE.md),
 including the command each was captured with.
@@ -184,11 +184,13 @@ npm run mint:toy     # re-mint the toy hierarchy (rotates its keys)
 
 ## Build & Verify
 
-**57 unit tests** (Vitest), all passing, across six files:
+**76 unit tests** (Vitest) across eight files:
 
 | File | What it proves |
 |---|---|
 | `src/pki/kat.test.ts` | **13 known-answer tests.** Every vendored chain parses to the subject, issuer, serial, validity window, SANs and SHA-256 fingerprint that `openssl x509` reports. The expected values are literals read out of the certificates *before* this lab could parse them. |
+| `src/pki/bootstrap.test.ts` | The parser and standalone fixture tool initialize the X.509 library in fresh processes. |
+| `src/pki/anchor-identity.test.ts` | The path builder checks the identity of the proposed trust anchor. |
 | `src/pki/hostname.test.ts` | RFC 9525 matching: exact names, wildcards standing for exactly one label, the ignored Common Name, host extraction from a pasted URL the way a browser does it, and fail-closed behaviour on anything that is not a plain DNS name. |
 | `src/pki/path.test.ts` | The correct path accepts the good chain and **rejects every bad one** — missing intermediate, one-byte signature alteration, expired, self-signed leaf, a root the device does not hold, and a parent not permitted to sign. |
 | `src/pki/assess.test.ts` | Every verdict the page renders, computed: which checks fail for which breakage, that promise 1 reports a key WebCrypto actually **imported** rather than a parsed field, and that the attacker fixture renders **ALARM** rather than a green success. |
@@ -206,7 +208,7 @@ arithmetically over every text node (including `aria-hidden` content axe skips),
 non-text contrast against a ratchet baseline, and checks reflow, which axe has no rule for.
 The deploy is blocked if it fails.
 
-**The claims suite** (`npm run test:verdicts`) checks the page tells the truth: **51 claims
+**The claims suite** (`npm run test:verdicts`) checks the page tells the truth: **61 claims
 tests plus 4 coverage rules**. The three biggest claims are **re-derived independently** in the
 test rather than recomputed the way the source computes them — RFC 9525 matching is implemented
 a second time in the spec, expiry is recomputed from the dates printed on screen, and the

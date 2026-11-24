@@ -50,7 +50,7 @@ export function toDateInput(at: Date): string {
 export function fromDateInput(value: string): Date | null {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null
   const at = new Date(`${value}T00:00:00Z`)
-  return Number.isNaN(at.getTime()) ? null : at
+  return Number.isNaN(at.getTime()) || toDateInput(at) !== value ? null : at
 }
 
 /** A date a reader can read, not an ISO string. */

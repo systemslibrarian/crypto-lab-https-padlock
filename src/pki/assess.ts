@@ -1,7 +1,7 @@
 import type * as x509 from '@peculiar/x509'
 import { human } from './clock'
 import { LAB_TRUST_STORE, type Scenario } from './fixtures'
-import { matchName } from './hostname'
+import { hostFromInput, matchName } from './hostname'
 import {
   commonName, dnsNames, keyDescription, organization, parsePem, signatureDescription,
   validityAt, webCrypto,
@@ -149,7 +149,7 @@ function checkVouched(path: PathResult): CheckResult {
 }
 
 /** Promise 4 -- it has not expired. The clock, not Date.now(). */
-function checkTime(leaf: x509.X509Certificate, at: Date): CheckResult {
+function checkTime(leaf: x509.X509Certificate, at: Date, signaturesVerified: boolean): CheckResult {
   const v = validityAt(leaf, at)
   return {
     id: 'promise-time',
@@ -159,7 +159,10 @@ function checkTime(leaf: x509.X509Certificate, at: Date): CheckResult {
     detail: v.inWindow
       ? `The date you are checking falls inside the window the certificate was issued for. Move the date past ${human(v.notAfter)} and this becomes a failure, with no cryptography changing at all.`
       : v.side === 'after'
-        ? `This certificate stopped being valid on ${human(v.notAfter)}. Every signature in the chain still checks out -- the only thing that changed is the date.`
+        ? `This certificate stopped being valid on ${human(v.notAfter)}. ` +
+          (signaturesVerified
+            ? 'The chain signatures verify. If the only thing that changed is the date, the signed bytes remain the same.'
+            : 'The separate chain check also failed.')
         : `This certificate does not become valid until ${human(v.notBefore)}.`,
     evidence: [
       { label: 'Valid from', value: human(v.notBefore) },
@@ -231,19 +234,26 @@ function checkOperator(leaf: x509.X509Certificate): CheckResult {
 }
 
 /** Non-promise 3 -- not that the hostname was private. RFC 6066; see tls/. */
-function checkSni(address: string, hostnameInBytes: string, offset: number): CheckResult {
+function checkSni(address: string, wire: WireFacts | null): CheckResult {
+  if (!wire) return {
+    id: 'nonpromise-sni', outcome: 'out-of-scope', plain: 'No hostname encoded',
+    headline: 'No DNS hostname to display',
+    detail: 'Enter a DNS name to see where it appears in the example message.',
+    evidence: [{ label: 'Hostname encoded', value: 'none' }],
+  }
+  const { hostnameInBytes, sniOffset: offset } = wire
   return {
     id: 'nonpromise-sni',
     outcome: 'not-established',
     plain: 'Sent in the clear',
     headline: 'Not that the hostname was private',
     detail:
-      `Before any encryption exists, your browser sends the name of the site in the clear so the server knows which certificate to offer. ` +
+      `This example ClientHello carries the server name in the clear. ` +
       `It is readable at byte ${offset} of the first message below, so anyone on the network path can see which site you asked for in this example. ` +
-      `A newer extension called Encrypted ClientHello hides it, and this message does not use one. What the network still cannot read is the contents of your traffic -- though the site you are talking to obviously can.`,
+      `Encrypted ClientHello can protect the inner name. This lab only encodes the first message. A completed TLS connection encrypts application data while leaving traffic sizes and timing visible.`,
     evidence: [
       { label: 'Name sent in the clear', value: hostnameInBytes },
-      { label: 'Matches the address', value: hostnameInBytes === address ? 'yes' : 'no' },
+      { label: 'Matches the address', value: hostnameInBytes === hostFromInput(address) ? 'yes' : 'no' },
       { label: 'Encrypted ClientHello used', value: 'no -- which is why it is readable here' },
       { label: 'Hostname privacy', value: 'not provided in this example' },
     ],
@@ -252,13 +262,19 @@ function checkSni(address: string, hostnameInBytes: string, offset: number): Che
 
 /** Non-promise 4 -- not that the strongest cryptography was used. */
 function checkStrength(suites: readonly string[]): CheckResult {
+  if (suites.length === 0) return {
+    id: 'nonpromise-strength', outcome: 'out-of-scope', plain: 'No offers encoded',
+    headline: 'No example cipher-suite list',
+    detail: 'Enter a DNS name to build the example ClientHello.',
+    evidence: [{ label: 'Cipher suites offered', value: 'none' }],
+  }
   return {
     id: 'nonpromise-strength',
     outcome: 'not-established',
     plain: 'Not shown by a padlock',
     headline: 'Not that the strongest cryptography was used',
     detail:
-      'Your browser and the server agree on which encryption to use at the very start, in the same unprotected message as the hostname, before either side has proved who it is. ' +
+      'The client offers cipher suites in ClientHello. The server selects one in ServerHello. This lab only builds the offer. ' +
       'TLS 1.3 does check afterwards that nobody altered that conversation -- the handshake signs its own transcript -- so this is not a free downgrade, and that is worth being clear about. ' +
       'What a padlock still does not tell you is which of these was actually chosen, or whether it was the strongest one both sides could have managed.',
     evidence: [
@@ -306,7 +322,7 @@ export interface WireFacts {
   readonly cipherSuiteNames: readonly string[]
 }
 
-export async function assess(input: AssessInput, wire: WireFacts): Promise<Assessment> {
+export async function assess(input: AssessInput, wire: WireFacts | null): Promise<Assessment> {
   const { scenario, address, at } = input
   const chain = scenario.chain.map(parsePem)
   const leaf = input.tamperedLeaf ?? chain[0]!
@@ -317,7 +333,7 @@ export async function assess(input: AssessInput, wire: WireFacts): Promise<Asses
   const key = await checkKey(leaf)
   const name = checkName(leaf, address)
   const vouched = checkVouched(path)
-  const time = checkTime(leaf, at)
+  const time = checkTime(leaf, at, vouched.outcome === 'pass')
   const promises = [key, name, vouched, time]
   const everyPromisePassed = promises.every((p) => p.outcome === 'pass')
 
@@ -329,8 +345,8 @@ export async function assess(input: AssessInput, wire: WireFacts): Promise<Asses
     // contradicts itself teaches whichever half the reader happened to read.
     checkHonest(scenario, everyPromisePassed),
     checkOperator(leaf),
-    checkSni(address, wire.hostnameInBytes, wire.sniOffset),
-    checkStrength(wire.cipherSuiteNames),
+    checkSni(address, wire),
+    checkStrength(wire?.cipherSuiteNames ?? []),
   ]
 
   return {

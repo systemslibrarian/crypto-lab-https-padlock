@@ -63,7 +63,7 @@ function summaryRow(check: Assessment['promises'][number], index: number): HTMLE
   ])
   kids.push(
     el('details', { 'data-disclosure': `check-${check.id}` }, [
-      el('summary', { text: failed ? 'What exactly was compared' : 'Why this passes, and what it read' }),
+      el('summary', { text: check.outcome === 'pass' ? 'Why this passes, and what it read' : 'What the lab checked' }),
       body,
     ]),
   )
@@ -229,7 +229,11 @@ function detailsBytes(summaryText: string, body: HTMLElement, key: string): HTML
   ])
 }
 
-export function renderWire(host: Element, hello: ClientHello): void {
+export function renderWire(host: Element, hello: ClientHello | null): void {
+  if (!hello) {
+    fill(host, el('p', { class: 'hint', text: 'Enter a DNS name to encode and inspect its ClientHello. No message is shown for this input.' }))
+    return
+  }
   const sni = hello.spans.find((s) => s.label === 'server name')!
   const suites = hello.spans.find((s) => s.label === 'cipher suites')!
   const bytes = hello.bytes
@@ -298,7 +302,7 @@ export function renderWire(host: Element, hello: ClientHello): void {
       el('p', {
         text:
           `Anyone who can watch your traffic -- your network, your employer, your internet provider -- can read "${asciiName}" ` +
-          'out of this message, because no Encrypted ClientHello is used here. What they cannot read is the contents of your traffic -- only that you went there. The site itself, of course, can read what you send it.',
+          'out of this message, because no Encrypted ClientHello is used here. On an encrypted connection an observer can still see addresses, packet sizes and timing. The destination site receives the application data.',
       }),
     ]),
     el('p', {

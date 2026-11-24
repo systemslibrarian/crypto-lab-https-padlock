@@ -200,6 +200,17 @@ test.describe('promise 2, the name check, re-derived independently', () => {
 })
 
 test.describe('promise 4, expiry, re-derived from the dates on screen', () => {
+  test('an empty or out-of-range date leaves the visible clock at the day actually checked', async ({ page }) => {
+    await bootExplore(page)
+    const date = page.locator('#date-input')
+    for (const invalid of ['', '2040-01-01']) {
+      await date.fill(invalid)
+      await expect(date).toHaveValue('2026-10-04')
+      await expect(page.locator('#date-error')).toContainText('2037-01-01')
+      await expect(page.locator('[data-verdict="promise-time"]')).toHaveAttribute('data-result', 'pass')
+    }
+  })
+
   test('the time verdict agrees with an independent date comparison', async ({ page }) => {
     await bootExplore(page)
     for (const date of ['2026-10-04', '2026-11-29', '2026-11-30', '2027-06-01', '2026-01-15']) {
@@ -386,6 +397,18 @@ test.describe('the other three non-promises are shown, not asserted', () => {
 
     // And the page's own read-back agrees with the decode.
     await expectClaim(page, 'sni-readable', { contains: address })
+  })
+
+  test('the encoded name follows a pasted URL and clears when the address is empty', async ({ page }) => {
+    await bootExplore(page)
+    await page.locator('#address-input').fill('https://www.github.com/library')
+    const sni = page.locator('[data-verdict="nonpromise-sni"]')
+    await expect(sni).toContainText('www.github.com')
+    expect(await evidence(page, '[data-verdict="nonpromise-sni"]', 'Matches the address')).toBe('yes')
+    await page.locator('#address-input').fill('')
+    await expect(sni).toContainText('No DNS hostname')
+    await expect(page.locator('#wire .bytes')).toHaveCount(0)
+    await expect(page.locator('[data-verdict="nonpromise-strength"]')).toContainText('No example cipher-suite list')
   })
 
   test('the cipher list is unauthenticated NOW and checked later, both stated', async ({ page }) => {

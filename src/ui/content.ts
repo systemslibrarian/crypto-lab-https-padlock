@@ -39,7 +39,7 @@ export const PADLOCK_HEADING = 'The padlock'
 export const CHAIN_HEADING = 'Who vouched for this, and why you believe them'
 
 export const CHAIN_LEDE =
-  'Each certificate was signed by the one above it in this list. Follow it far enough and you arrive at a certificate the server never sent at all -- it came from a list of roots that was already trusted before you visited. On a real device that list ships with your operating system or browser. This lab carries its own copy of one, so you can see where the chain stops.'
+  'On a successful walk, each link verifies with the next certificate. In the captured example the server omitted the final trust anchor. A server can send a copy of a root, but the client must already trust its anchor independently. On a real device that list ships with your operating system or browser. This lab carries its own copy of one, so you can see where the chain stops.'
 
 export const PROMISES_HEADING = 'The four things the padlock proves'
 
@@ -54,14 +54,14 @@ export const NONPROMISES_LEDE =
 export const WIRE_HEADING = 'The first message your browser sends'
 
 export const WIRE_LEDE =
-  'Before any encryption exists, your browser has to tell the server which site it wants, so the server knows which certificate to send. Here is that message, byte for byte, with the name highlighted. This lab encodes it and never sends it.'
+  'In this example the client sends the site name without Encrypted ClientHello, so the server can select its certificate. Here is that message, byte for byte, with the name highlighted. This lab encodes it and never sends it.'
 
 export const SCOPE_HEADING = 'What is real here, and what is not'
 
 export const SCOPE_REAL = [
   'The certificates are real. The one for github.com was captured from the public internet on 4 October 2026; the two trusted roots came out of a real operating system trust store on the same day.',
   'Every signature check runs in your browser through WebCrypto, over the real certificate bytes. Flip one bit and it fails, because it is actually being checked.',
-  'The first-message bytes are a real TLS 1.3 ClientHello, with the four extensions RFC 9846 requires of a client expecting a certificate, and a real X25519 public key generated here.',
+  'For a DNS name, the lab encodes a TLS 1.3 ClientHello. The byte view identifies whether this browser generated an X25519 public key or supplied placeholder bytes.',
 ]
 
 export const SCOPE_NOT = [

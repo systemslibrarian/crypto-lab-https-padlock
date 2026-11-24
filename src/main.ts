@@ -3,7 +3,7 @@ import { assess, type Assessment } from './pki/assess'
 import { tamperSignature } from './pki/break'
 import { CLOCK_MAX, CLOCK_MIN, DEFAULT_AT, fromDateInput, human, toDateInput } from './pki/clock'
 import { SCENARIOS, scenario } from './pki/fixtures'
-import { hostFromInput } from './pki/hostname'
+import { hostFromInput, isPlainDnsName } from './pki/hostname'
 import { parsePem } from './pki/parse'
 import { freshClientHello } from './tls/clienthello'
 import * as copy from './ui/content'
@@ -283,9 +283,9 @@ function renderControls(): void {
     const error = el('p', { class: 'hint', id: errId, role: 'status' })
     date.addEventListener('change', () => {
       const parsed = fromDateInput((date as HTMLInputElement).value)
-      if (!parsed) {
-        date.setAttribute('aria-invalid', 'true')
-        error.textContent = 'That is not a date this lab can check. Use the buttons, or type a day between 2025 and 2027.'
+      if (!parsed || parsed < CLOCK_MIN || parsed > CLOCK_MAX) {
+        date.value = toDateInput(state.at)
+        error.textContent = `Date change not applied. Still checking ${human(state.at)}. Choose a day from ${toDateInput(CLOCK_MIN)} to ${toDateInput(CLOCK_MAX)}.`
         return
       }
       date.removeAttribute('aria-invalid')
@@ -379,7 +379,9 @@ async function refresh(): Promise<void> {
   const s = scenario(state.scenarioId)
   const input = { address: state.address, at: state.at, tampered: state.tampered }
 
-  const hello = await freshClientHello(hostFromInput(input.address) || s.site)
+  const hostname = hostFromInput(input.address)
+  const isIpLiteral = /^\d+\.\d+\.\d+\.\d+$/.test(hostname)
+  const hello = isPlainDnsName(hostname) && !isIpLiteral ? await freshClientHello(hostname) : null
 
   const a: Assessment = await assess(
     {
@@ -388,11 +390,11 @@ async function refresh(): Promise<void> {
       at: input.at,
       tamperedLeaf: input.tampered ? tamperSignature(s.chain[0]!) : undefined,
     },
-    {
+    hello ? {
       hostnameInBytes: hello.hostnameInBytes,
       sniOffset: hello.spans.find((x) => x.label === 'server name')!.start,
       cipherSuiteNames: hello.cipherSuiteNames,
-    },
+    } : null,
   )
 
   if (token !== renderToken) return
