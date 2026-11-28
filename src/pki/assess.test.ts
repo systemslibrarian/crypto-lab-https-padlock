@@ -35,7 +35,7 @@ describe('the four promises, computed', () => {
     // is a thing the lab found out, rather than that the certificate had a
     // field in it. The check has a reachable failure branch because of it.
     expect(key.evidence.find((e) => e.label === 'Loaded by your browser')?.value).toBe('yes')
-    expect(key.detail).toContain('loaded the certificate')
+    expect(key.detail).toContain('imported the public key')
   })
 
   it('a wrong address fails only the name check', async () => {

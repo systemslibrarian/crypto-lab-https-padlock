@@ -54,7 +54,7 @@ export const TERMS: readonly Term[] = [
     id: 'domain-validated',
     word: 'domain-validated',
     definition:
-      'The cheapest and commonest kind of certificate. The issuer checked only that whoever asked could answer for the name -- by replying to an email or serving a file. It checked nothing about who they are.',
+      'The cheapest and commonest kind of certificate. It establishes control of a domain name. It gives the reader no verified organization identity.',
   },
   {
     id: 'san',

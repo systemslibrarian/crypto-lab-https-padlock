@@ -3,7 +3,7 @@
 **X.509 · TLS 1.3 · what the padlock means**
 
 Parses the real certificate a site presents, walks the chain to a root that was trusted before
-you arrived, and separates the four things the padlock proves from the four it does not.
+you arrived, and separates four offline certificate checks from the properties a certificate alone cannot establish.
 
 **[Open the live demo](https://systemslibrarian.github.io/crypto-lab-https-padlock/)**
 
@@ -71,8 +71,8 @@ lesson is a simulation of the lab.
 1. **The five steps.** What the padlock checks · the name has to match · dates matter and
    nothing else moves · somebody has to vouch · a perfect certificate for the wrong site. Each
    ends in one sentence worth remembering.
-2. **The padlock.** One verdict, computed from the four checks below. It reads `PADLOCK SHOWN`,
-   `NO PADLOCK`, or — for the attacker certificate — `PADLOCK SHOWN — AND NOT WHO YOU THINK`.
+2. **The padlock.** One verdict, computed from the four checks below. It reads `CERTIFICATE CHECKS PASS`,
+   `CERTIFICATE CHECK FAILED`, or `CERTIFICATE CHECKS PASS — CHECK THE SITE NAME`. The lab makes no connection and cannot observe private-key possession.
 3. **The chain walk.** Leaf, intermediate, root, drawn as boxes with the verdict on each
    signature between them. The last box is marked as the one the **server never sent** — it
    came from the trusted list, and nothing in the chain vouches for it. On a real device that
@@ -88,7 +88,7 @@ lesson is a simulation of the lab.
 6. **The four non-promises.** Not that the site is honest; not that the company is who it says;
    not that the hostname was private; not that the strongest cryptography was used. Each is
    *demonstrated* rather than asserted.
-7. **The first message your browser sends.** A real TLS 1.3 `ClientHello`, in hex, with the
+7. **A minimal TLS 1.3 ClientHello.** The lab constructs a sample message in hex, with the
    hostname highlighted where it sits in the clear.
 8. **Look closer.** The chain walk, the `ClientHello` bytes and the RFC scope, one disclosure
    each. An open one survives a recomputation, so reading the chain while editing the address

@@ -85,10 +85,10 @@ async function checkKey(leaf: x509.X509Certificate): Promise<CheckResult> {
     id: 'promise-key',
     outcome: imported ? 'pass' : 'fail',
     plain: imported ? 'Key loads' : 'Key will not load',
-    headline: imported ? 'The certificate carries a usable key' : 'The key cannot be used',
+    headline: imported ? 'The certificate public key imports' : 'The public key could not be imported',
     detail: imported
-      ? 'Your browser loaded the certificate\'s public key and it works. This key is how the site proves it really holds the matching private key: ' +
-        'during the handshake the server signs a piece of the conversation, and your browser checks that signature with this key. ' +
+      ? 'Web Crypto imported the public key in this certificate. On a live TLS 1.3 connection using certificate authentication, ' +
+        'the server signs the handshake transcript and the browser checks the signature with this key. ' +
         'It is NOT the key your traffic is encrypted with -- that one is agreed separately and freshly for each connection. ' +
         'Neither step happens in this lab; see TLS Handshake for both.'
       : 'This certificate carries a public key your browser cannot load, so the site could not prove it holds the matching private key -- whatever else about the certificate is in order.',
@@ -223,11 +223,11 @@ function checkOperator(leaf: x509.X509Certificate): CheckResult {
     headline: 'Not that the company is who it says',
     detail:
       org === ''
-        ? `This certificate carries no organization name at all. The only thing its issuer checked was that somebody could answer for "${cn}" -- that is what domain validation means, and it is what almost every certificate on the web is. Who actually operates the name is NOT ESTABLISHED.`
+        ? `This certificate carries no organization name at all. This is domain validation: the certificate attests to control of "${cn}". It provides no validated organization identity. Who actually operates the name is NOT ESTABLISHED.`
         : `This certificate names the organization "${org}", but this lab does not verify that claim and neither does the padlock on its own. Who actually operates the name is NOT ESTABLISHED by anything shown here.`,
     evidence: [
-      { label: 'Organization in certificate', value: org === '' ? '(none -- nobody validated one)' : org },
-      { label: 'Issuer checked', value: 'control of the name, and nothing else' },
+      { label: 'Organization in certificate', value: org === '' ? '(none recorded)' : org },
+      { label: 'Name in certificate', value: cn },
       { label: 'Operator identity', value: 'not established' },
     ],
   }
@@ -295,8 +295,8 @@ function padlockVerdict(
   if (failed.length > 0) {
     return {
       result: 'fail',
-      headline: 'NO PADLOCK',
-      detail: `Your browser would refuse this connection, or warn you hard. ${failed[0]!.headline}.`,
+      headline: 'CERTIFICATE CHECK FAILED',
+      detail: `The offline check failed. ${failed[0]!.headline}.`,
     }
   }
   // Every check passed. For the attacker exhibit that is precisely the moment
@@ -305,14 +305,14 @@ function padlockVerdict(
   if (!scenario.real) {
     return {
       result: 'alarm',
-      headline: 'PADLOCK SHOWN — AND NOT WHO YOU THINK',
-      detail: `Every check passed. Your browser would show a padlock for "${scenario.site}" and mean every word of it. It still is not your bank.`,
+      headline: 'CERTIFICATE CHECKS PASS — CHECK THE SITE NAME',
+      detail: `The supplied chain passed the four offline checks for "${scenario.site}". Read that name carefully. Someone can control it without operating your bank.`,
     }
   }
   return {
     result: 'pass',
-    headline: 'PADLOCK SHOWN',
-    detail: `All four checks passed for "${scenario.site}". That is what the padlock means, and the four things below are what it still does not.`,
+    headline: 'CERTIFICATE CHECKS PASS',
+    detail: `All four checks passed for "${scenario.site}". Checking that a live server holds the matching private key requires a handshake. This exercise opened no connection.`,
   }
 }
 

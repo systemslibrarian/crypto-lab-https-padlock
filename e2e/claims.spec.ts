@@ -46,7 +46,7 @@ test.describe('the headline verdict', () => {
   test('the padlock verdict reports the computed outcome, not a canned banner', async ({ page }) => {
     await boot(page)
     await expectVerdict(page, 'padlock', {
-      contains: 'PADLOCK SHOWN',
+      contains: 'CERTIFICATE CHECKS PASS',
       result: 'pass',
     })
     // Cross-check: the headline says the padlock shows, so every promise row
@@ -79,7 +79,7 @@ test.describe('promise 1, the key', () => {
   test('the key check reports the curve the certificate actually carries', async ({ page }) => {
     await bootExplore(page)
     await expectVerdict(page, 'promise-key', {
-      contains: 'The certificate carries a usable key',
+      contains: 'The certificate public key imports',
       result: 'pass',
     })
     // The claim is about a parsed field, so it is checked against the field:
@@ -312,7 +312,7 @@ test.describe('the negative claim: a valid certificate does not establish the op
     await expect(page.locator('#chain .walk-link[data-result="pass"]')).toHaveCount(links)
     // And the padlock does show -- it is a real, correct, valid certificate.
     await expectVerdict(page, 'padlock', {
-      contains: 'PADLOCK SHOWN',
+      contains: 'CERTIFICATE CHECKS PASS',
       result: 'alarm',
     })
   })
@@ -680,7 +680,7 @@ test.describe('the five-step lesson', () => {
     await page.locator('#site-attacker-name').check()
     await expect(page.locator('#tamper-btn')).toHaveAttribute('aria-pressed', 'false')
     await expect(page.locator('#promises .summary-row[data-result="pass"]')).toHaveCount(4)
-    await expectVerdict(page, 'padlock', { contains: 'PADLOCK SHOWN', result: 'alarm' })
+    await expectVerdict(page, 'padlock', { contains: 'CERTIFICATE CHECKS PASS', result: 'alarm' })
   })
 
   test('state badges say what the reader has left switched on', async ({ page }) => {

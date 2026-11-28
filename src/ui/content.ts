@@ -15,8 +15,8 @@ export const INTRO_HEADING = 'What the padlock actually says'
 
 export const INTRO = [
   'When your browser shows a padlock, it has checked a small, specific list of things -- and that list is shorter than almost everyone assumes.',
-  'The padlock is a statement about the connection and the name. It says your traffic is scrambled on the way, and that the name in the address bar is the name on the certificate the site presented. That is genuinely valuable and it is genuinely narrow.',
-  'It says nothing at all about the people behind the name. This page takes a real certificate apart, shows you the four things the padlock proves, lets you break each one, and then shows you a flawless certificate for a site you would never want to visit.',
+  'The padlock is a statement about the connection and the name. A completed HTTPS connection encrypts traffic in transit and authenticates the requested name. This offline exercise checks a captured certificate without connecting to a server. That is genuinely valuable and it is genuinely narrow.',
+  'It says nothing at all about the people behind the name. This page takes a real certificate apart, runs four certificate checks, lets you break each one, and then shows you a flawless certificate for a site you would never want to visit.',
 ]
 
 export const CONTROLS_HEADING = 'Pick a site, and set the date'
@@ -27,21 +27,21 @@ export const CONTROLS_LEDE =
 export const ADDRESS_LABEL = 'The address you think you are visiting'
 
 export const ADDRESS_HINT =
-  'Change this to something the certificate is not for, and watch the name check fail the way a browser would.'
+  'Enter an ASCII DNS name to check against the certificate. This exercise uses a limited address parser and omits IP-address and internationalized-name matching.'
 
 export const DATE_LABEL = 'The date you are checking'
 
 export const DATE_HINT =
   'This lab has its own clock, so the lesson never rots. Move it past the expiry date and watch a valid certificate become invalid with no cryptography changing.'
 
-export const PADLOCK_HEADING = 'The padlock'
+export const PADLOCK_HEADING = 'Offline certificate result'
 
 export const CHAIN_HEADING = 'Who vouched for this, and why you believe them'
 
 export const CHAIN_LEDE =
   'On a successful walk, each link verifies with the next certificate. In the captured example the server omitted the final trust anchor. A server can send a copy of a root, but the client must already trust its anchor independently. On a real device that list ships with your operating system or browser. This lab carries its own copy of one, so you can see where the chain stops.'
 
-export const PROMISES_HEADING = 'The four things the padlock proves'
+export const PROMISES_HEADING = 'Four offline certificate checks'
 
 export const PROMISES_LEDE =
   'Each of these is checked against the real certificate bytes. Break any of them with the controls above.'
@@ -51,10 +51,10 @@ export const NONPROMISES_HEADING = 'The four things it does not'
 export const NONPROMISES_LEDE =
   'These are not warnings about something going wrong. They are things the padlock was never built to tell you, each shown here rather than asserted.'
 
-export const WIRE_HEADING = 'The first message your browser sends'
+export const WIRE_HEADING = 'A minimal TLS 1.3 ClientHello'
 
 export const WIRE_LEDE =
-  'In this example the client sends the site name without Encrypted ClientHello, so the server can select its certificate. Here is that message, byte for byte, with the name highlighted. This lab encodes it and never sends it.'
+  'The lab constructs this example and highlights the server-name bytes. A real browser may send a different set of extensions. The message stays in this tab.'
 
 export const SCOPE_HEADING = 'What is real here, and what is not'
 
@@ -66,7 +66,7 @@ export const SCOPE_REAL = [
 
 export const SCOPE_NOT = [
   'This lab makes no network connection and runs no handshake. It reads certificates that were already captured; it does not watch TLS happen. The first message is encoded and never sent, and the private half of its key is thrown away.',
-  'Its path checking is a teaching subset of RFC 5280. It does not check revocation, name constraints, policy constraints, or path length -- so a chain this page accepts is not thereby a chain a browser would accept. Chain of Trust is the lab for that.',
+  'Its path checking is a teaching subset of RFC 5280. It follows the supplied certificate order without building alternate paths or fetching missing intermediates. Its checks omit revocation, key usage, extended key usage, unknown critical extensions, name constraints, policy constraints and path-length constraints. This lab also checks its stored root’s dates as a local teaching policy.',
   'The list of trusted roots here is THIS LAB\'S copy, not your device\'s. The lab cannot read what your machine trusts and does not change it. Real lists differ between operating systems, browsers and workplace policy -- and this one has an extra root no real device carries, added on purpose so you can watch a perfect certificate for a name that is not your bank.',
   'Browsers no longer all draw a padlock. Chrome replaced its lock with a neutral icon in 2023, because the lock was read as a safety badge -- which is the misreading this page is about. The ideas here are the same whatever the icon looks like.',
   'This is a teaching demo, not production code.',

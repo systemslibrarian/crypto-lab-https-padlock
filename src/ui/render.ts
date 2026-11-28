@@ -102,7 +102,7 @@ export function renderPromises(host: Element, a: Assessment): void {
     el('h2', { id: 'promises-h', text: copy.PROMISES_HEADING }),
     el('p', { class: 'lede', text: copy.PROMISES_LEDE }),
     list(
-      { class: 'checks', 'aria-label': 'The four things the padlock proves' },
+      { class: 'checks', 'aria-label': 'Four offline certificate checks' },
       a.promises.map((p, i) => summaryRow(p, i + 1)),
     ),
   )
@@ -249,7 +249,7 @@ export function renderWire(host: Element, hello: ClientHello | null): void {
     class: 'bytes',
     role: 'region',
     tabindex: '0',
-    'aria-label': 'The first message your browser sends, as hexadecimal bytes, with the site name highlighted',
+    'aria-label': 'The sample ClientHello, as hexadecimal bytes, with the site name highlighted',
   }, [
     document.createTextNode(`${before} `),
     el('span', { class: 'bytes-hl', text: name }),

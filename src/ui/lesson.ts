@@ -64,13 +64,13 @@ export const STEPS: readonly Step[] = [
     title: 'What the padlock checks',
     question: 'When a browser shows a padlock, what has it actually checked?',
     action:
-      'Nothing to change yet. This is the certificate github.com really presented. Read the four checks below -- that is the whole list.',
+      'Nothing to change yet. This is the certificate github.com really presented. Read the four checks this exercise performs.',
     controls: [],
     baseline: REAL,
     result:
-      'All four checks pass, so a browser would show a padlock here. The list is short on purpose: four things, and nothing else.',
+      'All four offline certificate checks pass. A live server would also need to complete a handshake and prove possession of the matching private key.',
     takeaway:
-      'The padlock is a statement about the connection and the name. Four checks, all of them about the certificate -- none of them about the people behind it.',
+      'The padlock is a statement about the connection and the name. This exercise checks the certificate. A successful check cannot identify the people operating the site.',
   },
   {
     id: 'name-must-match',
@@ -221,7 +221,7 @@ export const STEPS: readonly Step[] = [
       ],
     },
     result:
-      'All four checks pass, and the verdict is an ALARM rather than a green padlock. The certificate is perfect. The site is still not your bank.',
+      'All four offline checks pass, and the verdict asks you to read the site name. The certificate is perfect. The site is still not your bank.',
     takeaway:
       'The padlock answers "is this the name I asked for, over a connection nobody can read" -- never "are these people who I hope they are". Read the address, not the icon.',
   },

@@ -87,7 +87,7 @@
         "padlock": {
           "test": "2. every verdict the page renders in that state reports success",
           "claim": {
-            "contains": "PADLOCK SHOWN",
+            "contains": "CERTIFICATE CHECKS PASS",
             "result": "alarm"
           }
         }
@@ -131,7 +131,7 @@
         "padlock": {
           "test": "2. every verdict the page renders in that state reports success",
           "claim": {
-            "contains": "PADLOCK SHOWN",
+            "contains": "CERTIFICATE CHECKS PASS",
             "result": "alarm"
           }
         }
@@ -206,7 +206,7 @@
         "promise-key": {
           "test": "the key check reports the curve the certificate actually carries",
           "claim": {
-            "contains": "The certificate carries a usable key",
+            "contains": "The certificate public key imports",
             "result": "pass"
           }
         }
